@@ -1,6 +1,9 @@
 #define TEST_SOURCE
 #include "test.h"
 
+#define M4F_SOURCE
+#include "m4f.h"
+
 #define GDRENDERER_SOURCE
 #include "gd_renderer.h"
 

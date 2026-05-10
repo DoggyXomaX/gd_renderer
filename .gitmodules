@@ -4,3 +4,6 @@
 [submodule "deps/SDL"]
 	path = deps/SDL
 	url = https://github.com/libsdl-org/SDL
+[submodule "deps/gd_math"]
+	path = deps/gd_math
+	url = https://github.com/doggyxomax/gd_math.git

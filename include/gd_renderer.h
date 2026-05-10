@@ -1,14 +1,10 @@
 #ifndef GDRENDERER_HEADER
 #define GDRENDERER_HEADER
 
-#include "GL/glcorearb.h"
-#include "SDL3/SDL_error.h"
-#include "SDL3/SDL_events.h"
-#include "SDL3/SDL_init.h"
-#include "SDL3/SDL_video.h"
 #include <GL/gl3w.h>
 #include <SDL3/SDL.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #define GDR_INIT_FLAG (1 << 0)
 #define GDR_RUNNING_FLAG (1 << 1)
@@ -42,12 +38,180 @@ void GDRenderer_StartUpdate(GDRenderer* this);
 /* =============================== */
 #ifdef GDRENDERER_SOURCE
 
-#include <stdbool.h>
 #include <stdio.h>
+#include <math.h>
+#include "m4f.h"
 
 static bool isGL3WInit = false;
 
-int gl3wInit();
+static const char* testVertexShader =
+  "#version 330 core\n"
+  "layout (location = 0) in vec3 aPosition;\n"
+  "layout (location = 1) in vec3 aColor;\n"
+  "\n"
+  "uniform mat4 uMvp;\n"
+  "\n"
+  "out vec3 vColor;\n"
+  "\n"
+  "void main(void) {\n"
+  "  vColor = aColor;\n"
+  "  gl_Position = uMvp * vec4(aPosition, 1.0);\n"
+  "}\n";
+
+static const char* testFragmentShader =
+  "#version 330 core\n"
+  "in vec3 vColor;\n"
+  "out vec4 FragColor;\n"
+  "\n"
+  "void main(void) {\n"
+  "  FragColor = vec4(vColor, 1.0);\n"
+  "}\n";
+
+// clang-format off
+static float testVertices[] = {
+  // front, red
+  -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
+   0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
+   0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
+  -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
+
+  // back, green
+   0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
+  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
+  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
+   0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
+
+  // left, blue
+  -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
+  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
+  -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
+  -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
+
+  // right, yellow
+   0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
+   0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
+   0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
+   0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
+
+  // top, cyan
+  -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
+   0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
+   0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+
+  // bottom, magenta
+  -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
+   0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
+   0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+  -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+};
+
+static uint32_t testIndices[] = {
+   0,  1,  2,   0,  2,  3,  // front
+   4,  5,  6,   4,  6,  7,  // back
+   8,  9, 10,   8, 10, 11,  // left
+  12, 13, 14,  12, 14, 15,  // right
+  16, 17, 18,  16, 18, 19,  // top
+  20, 21, 22,  20, 22, 23,  // bottom
+};
+// clang-format on
+
+GLuint testVAO = 0;
+GLuint testVBO = 0;
+GLuint testEBO = 0;
+float testAngle = 0.0f;
+m4f view, model, project;
+m4f rotationX, rotationY, viewModel, mvp;
+
+static GLuint testCreateShader(GLenum type, const char* source) {
+  GLuint shader = glCreateShader(type);
+
+  glShaderSource(shader, 1, &source, NULL);
+  glCompileShader(shader);
+
+  GLint isCompiled = 0;
+  glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
+
+  if (!isCompiled) {
+    char log[1024];
+
+    glGetShaderInfoLog(shader, sizeof(log), NULL, log);
+    fprintf(stderr, "Shader compile error: %s\n", log);
+
+    glDeleteShader(shader);
+    return 0;
+  }
+
+  return shader;
+}
+
+static GLuint createProgram(const char* vertexSource, const char* fragmentSource) {
+  GLuint vertexShader = testCreateShader(GL_VERTEX_SHADER, vertexSource);
+  GLuint fragmentShader = testCreateShader(GL_FRAGMENT_SHADER, fragmentSource);
+
+  if (vertexShader == 0 || fragmentShader == 0) {
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    return 0;
+  }
+
+  GLuint program = glCreateProgram();
+
+  glAttachShader(program, vertexShader);
+  glAttachShader(program, fragmentShader);
+  glLinkProgram(program);
+
+  glDeleteShader(vertexShader);
+  glDeleteShader(fragmentShader);
+
+  GLint isLinked = 0;
+  glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
+
+  if (!isLinked) {
+    char log[1024];
+
+    glGetProgramInfoLog(program, sizeof(log), NULL, log);
+    fprintf(stderr, "Program link error: %s\n", log);
+
+    glDeleteProgram(program);
+    return 0;
+  }
+
+  return program;
+}
+
+GLuint testGL() {
+  m4f_identity(&view);
+  m4f_identity(&model);
+  m4f_identity(&project);
+
+  glEnable(GL_DEPTH_TEST);
+
+  glGenVertexArrays(1, &testVAO);
+  glGenBuffers(1, &testVBO);
+  glGenBuffers(1, &testEBO);
+
+  glBindVertexArray(testVAO);
+
+  glBindBuffer(GL_ARRAY_BUFFER, testVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(testVertices), testVertices, GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, testEBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(testIndices), testIndices, GL_STATIC_DRAW);
+
+  // position
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+
+  // color
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
+
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
+
+  return createProgram(testVertexShader, testFragmentShader);
+}
 
 GDRenderer GDRenderer_New(const char* title, uint32_t width, uint32_t height) {
   GDRenderer renderer = {
@@ -135,13 +299,19 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
     return;
   }
 
-  glEnable(GL_DEPTH_TEST);
+  // TEST
+  GLuint testProgram = testGL();
+  if (!testProgram) {
+    return;
+  }
+  GLint mvpLocation = glGetUniformLocation(testProgram, "uMvp");
+  // TEST
+
   glViewport(0, 0, this->Width, this->Height);
   glClearColor(0.0, 1.0, 0.0, 1.0);
 
   this->Flags |= GDR_RUNNING_FLAG;
 
-  double prevSecondTime = 1;
   Uint64 prevTime = SDL_GetPerformanceCounter();
   Uint64 frequency = SDL_GetPerformanceFrequency();
   while (this->Flags & GDR_RUNNING_FLAG) {
@@ -162,21 +332,84 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
       case SDL_EVENT_WINDOW_RESIZED: {
         this->Width = event->window.data1;
         this->Height = event->window.data2;
-        glViewport(0, 0, event->window.data1, event->window.data2);
+        // glViewport(0, 0, event->window.data1, event->window.data2);
       }
       }
     }
 
-    if (prevSecondTime < this->Time) {
-      prevSecondTime = this->Time + 1.0;
-      printf("FPS: %8.2lf, %ux%u\n", 1.0 / this->DeltaTime, this->Width, this->Height);
-    }
+    glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // TODO: real rendering
+    // TEST
+
+    // Perspective
+    int pixelWidth, pixelHeight;
+    SDL_GetWindowSizeInPixels(this->Impl.Window, &pixelWidth, &pixelHeight);
+    float aspect = (float)pixelWidth / (float)pixelHeight;
+    glViewport(0, 0, pixelWidth, pixelHeight);
+
+    // TODO: m4_perspective(70.0 * 3.141592 / 180.0, aspect, 0.1, 100.0);
+    float fovY = 70.0f * 3.141592f / 180.0f;
+    float near = 0.1f;
+    float far = 100.0f;
+    float f = 1.0f / tanf(fovY * 0.5f);
+    m4f_set(
+      &project,
+      f / aspect, 0, 0, 0,
+      0, f, 0, 0,
+      0, 0, (far + near) / (near - far), (2.0f * far * near) / (near - far),
+      0, 0, -1.0f, 1);
+
+    // TODO: m4_translate(0.0, 0.0, 3.0)
+    m4f_set(
+      &view,
+      1, 0, 0, 0.0f,
+      0, 1, 0, 0.0f,
+      0, 0, 1, -3.0f,
+      0, 0, 0, 1);
+
+    // TODO: m4_rotateX?
+    float cx = cos(testAngle * 0.7f);
+    float sx = sin(testAngle * 0.7f);
+    m4f_set(
+      &rotationX,
+      1, 0, 0, 0,
+      0, cx, -sx, 0,
+      0, sx, cx, 0,
+      0, 0, 0, 1);
+
+    // TODO: m4_rotateY?
+    float cy = cos(testAngle);
+    float sy = sin(testAngle);
+    m4f_set(
+      &rotationY,
+      cy, 0, sy, 0,
+      0, 1, 0, 0,
+      -sy, 0, cy, 0,
+      0, 0, 0, 1);
+
+    testAngle += this->DeltaTime;
+
+    m4f_mul(&model, &rotationY, &rotationX);
+    m4f_mul(&viewModel, &view, &model);
+    m4f_mul(&mvp, &project, &viewModel);
+
+    glUseProgram(testProgram);
+    glBindVertexArray(testVAO);
+    glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, mvp.raw);
+
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    // TEST
 
     SDL_GL_SwapWindow(this->Impl.Window);
   }
+
+  // TEST
+  glDeleteBuffers(1, &testEBO);
+  glDeleteBuffers(1, &testVBO);
+  glDeleteVertexArrays(1, &testVAO);
+  glDeleteProgram(testProgram);
+  // TEST
 }
 
 #undef GDRENDERER_SOURCE
