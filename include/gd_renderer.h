@@ -28,6 +28,7 @@ typedef struct GDRenderer_s {
   uint32_t Height;
   const char* Title;
   double DeltaTime;
+  double Time;
 
   GDRendererImpl Impl;
 } GDRenderer;
@@ -140,12 +141,14 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
 
   this->Flags |= GDR_RUNNING_FLAG;
 
+  double prevSecondTime = 1;
   Uint64 prevTime = SDL_GetPerformanceCounter();
   Uint64 frequency = SDL_GetPerformanceFrequency();
   while (this->Flags & GDR_RUNNING_FLAG) {
     // Timing
     Uint64 time = SDL_GetPerformanceCounter();
     this->DeltaTime = (double)(time - prevTime) / (double)frequency;
+    this->Time += this->DeltaTime;
     prevTime = time;
 
     // Events
@@ -164,7 +167,10 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
       }
     }
 
-    printf("%.6lf, FPS: %.6lf, Width: %ul, %ul\n", this->DeltaTime, 1.0 / this->DeltaTime, this->Width, this->Height);
+    if (prevSecondTime < this->Time) {
+      prevSecondTime = this->Time + 1.0;
+      printf("FPS: %8.2lf, %ux%u\n", 1.0 / this->DeltaTime, this->Width, this->Height);
+    }
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // TODO: real rendering
