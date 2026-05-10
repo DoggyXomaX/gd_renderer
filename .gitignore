@@ -1,0 +1,15 @@
+# Artifacts
+node_modules
+build
+dist
+public
+bin
+
+# IDE
+.zed
+.vscode
+.vs
+.idea
+
+# MacOS
+.DS_Store

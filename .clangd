@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://json.schemastore.org/clangd.json
+Diagnostics:
+  UnusedIncludes: Strict
+CompileFlags:
+  Add:
+    - -xc
+    - -Iinclude
+    - -Ideps/gl3w/include
+    - -Ideps/SDL/include
+    - -std=c11
+    - -Wall
+    - -Wextra
+    - -DGDRENDERER_SOURCE
+---
+If:
+  PathMatch: (^|.*/)(tests|include)/.*\.(c|h)$
+CompileFlags:
+  Add:
+    - -I../include
+    - -I../deps/gl3w/include
+    - -I../deps/SDL/include
