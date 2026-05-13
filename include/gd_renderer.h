@@ -223,14 +223,14 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
     SDL_Event* event = &this->Impl.Event;
     while (SDL_PollEvent(event)) {
       switch (event->type) {
-      case SDL_EVENT_QUIT: {
-        this->Flags &= ~(GDR_RUNNING_FLAG);
-        break;
-      }
-      case SDL_EVENT_WINDOW_RESIZED: {
-        this->Width = event->window.data1;
-        this->Height = event->window.data2;
-      }
+        case SDL_EVENT_QUIT: {
+          this->Flags &= ~(GDR_RUNNING_FLAG);
+          break;
+        }
+        case SDL_EVENT_WINDOW_RESIZED: {
+          this->Width = event->window.data1;
+          this->Height = event->window.data2;
+        }
       }
     }
 

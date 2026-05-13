@@ -148,33 +148,33 @@ void GDMaterial_Use(GDMaterial* this) {
   for (size_t i = 0; i < this->ParamsCount; i++) {
     GDMaterialParam* param = &this->Params[i];
     switch (param->Type) {
-    case GDPARAM_TEXTURE:
-      GDShader_SetTexture(shader, param->Name, param->Texture.Value);
-      break;
-    case GDPARAM_INT32:
-      GDShader_SetInt32(shader, param->Name, param->Int32.Value);
-      break;
-    case GDPARAM_FLOAT:
-      GDShader_SetFloat(shader, param->Name, param->Float.Value);
-      break;
-    case GDPARAM_VEC2:
-      GDShader_SetVec2(shader, param->Name, param->Vec2.Value);
-      break;
-    case GDPARAM_VEC3:
-      GDShader_SetVec3(shader, param->Name, param->Vec3.Value);
-      break;
-    case GDPARAM_VEC4:
-      GDShader_SetVec4(shader, param->Name, param->Vec4.Value);
-      break;
-    case GDPARAM_MAT2:
-      GDShader_SetMat2(shader, param->Name, param->Mat2.Value);
-      break;
-    case GDPARAM_MAT3:
-      GDShader_SetMat3(shader, param->Name, param->Mat3.Value);
-      break;
-    case GDPARAM_MAT4:
-      GDShader_SetMat4(shader, param->Name, param->Mat4.Value);
-      break;
+      case GDPARAM_TEXTURE:
+        GDShader_SetTexture(shader, param->Name, param->Texture.Value);
+        break;
+      case GDPARAM_INT32:
+        GDShader_SetInt32(shader, param->Name, param->Int32.Value);
+        break;
+      case GDPARAM_FLOAT:
+        GDShader_SetFloat(shader, param->Name, param->Float.Value);
+        break;
+      case GDPARAM_VEC2:
+        GDShader_SetVec2(shader, param->Name, param->Vec2.Value);
+        break;
+      case GDPARAM_VEC3:
+        GDShader_SetVec3(shader, param->Name, param->Vec3.Value);
+        break;
+      case GDPARAM_VEC4:
+        GDShader_SetVec4(shader, param->Name, param->Vec4.Value);
+        break;
+      case GDPARAM_MAT2:
+        GDShader_SetMat2(shader, param->Name, param->Mat2.Value);
+        break;
+      case GDPARAM_MAT3:
+        GDShader_SetMat3(shader, param->Name, param->Mat3.Value);
+        break;
+      case GDPARAM_MAT4:
+        GDShader_SetMat4(shader, param->Name, param->Mat4.Value);
+        break;
     }
   }
 }

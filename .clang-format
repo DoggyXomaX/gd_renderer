@@ -9,5 +9,6 @@ PointerAlignment: Left
 AllowShortFunctionsOnASingleLine: None
 Cpp11BracedListStyle: Block
 ColumnLimit: 0
+IndentCaseLabels: true
 SortIncludes:
   Enabled: false
