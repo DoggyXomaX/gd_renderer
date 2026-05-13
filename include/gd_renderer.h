@@ -1,6 +1,7 @@
 #ifndef GDRENDERER_HEADER
 #define GDRENDERER_HEADER
 
+#include "gd_geometry.h"
 #include "gd_material.h"
 #include "gd_shader.h"
 
@@ -49,51 +50,51 @@ static bool isGL3WInit = false;
 
 // <TEST>
 // clang-format off
-static float testVertices[] = {
-  // front, red
-  -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-   0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-   0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-  -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
+static GDVertex testVertices[] = {
+  // Front, normal +Z
+  -0.5f, -0.5f,  0.5f,   0.0f,  0.0f,  1.0f,   0.0f, 0.0f,
+   0.5f, -0.5f,  0.5f,   0.0f,  0.0f,  1.0f,   1.0f, 0.0f,
+   0.5f,  0.5f,  0.5f,   0.0f,  0.0f,  1.0f,   1.0f, 1.0f,
+  -0.5f,  0.5f,  0.5f,   0.0f,  0.0f,  1.0f,   0.0f, 1.0f,
 
-  // back, green
-   0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-   0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
+  // Back, normal -Z
+   0.5f, -0.5f, -0.5f,   0.0f,  0.0f, -1.0f,   0.0f, 0.0f,
+  -0.5f, -0.5f, -0.5f,   0.0f,  0.0f, -1.0f,   1.0f, 0.0f,
+  -0.5f,  0.5f, -0.5f,   0.0f,  0.0f, -1.0f,   1.0f, 1.0f,
+   0.5f,  0.5f, -0.5f,   0.0f,  0.0f, -1.0f,   0.0f, 1.0f,
 
-  // left, blue
-  -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
-  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-  -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-  -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
+  // Left, normal -X
+  -0.5f, -0.5f, -0.5f,  -1.0f,  0.0f,  0.0f,   0.0f, 0.0f,
+  -0.5f, -0.5f,  0.5f,  -1.0f,  0.0f,  0.0f,   1.0f, 0.0f,
+  -0.5f,  0.5f,  0.5f,  -1.0f,  0.0f,  0.0f,   1.0f, 1.0f,
+  -0.5f,  0.5f, -0.5f,  -1.0f,  0.0f,  0.0f,   0.0f, 1.0f,
 
-  // right, yellow
-   0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-   0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
-   0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
-   0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
+  // Right, normal +X
+   0.5f, -0.5f,  0.5f,   1.0f,  0.0f,  0.0f,   0.0f, 0.0f,
+   0.5f, -0.5f, -0.5f,   1.0f,  0.0f,  0.0f,   1.0f, 0.0f,
+   0.5f,  0.5f, -0.5f,   1.0f,  0.0f,  0.0f,   1.0f, 1.0f,
+   0.5f,  0.5f,  0.5f,   1.0f,  0.0f,  0.0f,   0.0f, 1.0f,
 
-  // top, cyan
-  -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
-   0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
-   0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+  // Top, normal +Y
+  -0.5f,  0.5f,  0.5f,   0.0f,  1.0f,  0.0f,   0.0f, 0.0f,
+   0.5f,  0.5f,  0.5f,   0.0f,  1.0f,  0.0f,   1.0f, 0.0f,
+   0.5f,  0.5f, -0.5f,   0.0f,  1.0f,  0.0f,   1.0f, 1.0f,
+  -0.5f,  0.5f, -0.5f,   0.0f,  1.0f,  0.0f,   0.0f, 1.0f,
 
-  // bottom, magenta
-  -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-   0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-   0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-  -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+  // Bottom, normal -Y
+  -0.5f, -0.5f, -0.5f,   0.0f, -1.0f,  0.0f,   0.0f, 0.0f,
+   0.5f, -0.5f, -0.5f,   0.0f, -1.0f,  0.0f,   1.0f, 0.0f,
+   0.5f, -0.5f,  0.5f,   0.0f, -1.0f,  0.0f,   1.0f, 1.0f,
+  -0.5f, -0.5f,  0.5f,   0.0f, -1.0f,  0.0f,   0.0f, 1.0f,
 };
 
 static uint32_t testIndices[] = {
-   0,  1,  2,   0,  2,  3,  // front
-   4,  5,  6,   4,  6,  7,  // back
-   8,  9, 10,   8, 10, 11,  // left
-  12, 13, 14,  12, 14, 15,  // right
-  16, 17, 18,  16, 18, 19,  // top
-  20, 21, 22,  20, 22, 23,  // bottom
+   0,  1,  2,   2,  3,  0,
+   4,  5,  6,   6,  7,  4,
+   8,  9, 10,  10, 11,  8,
+  12, 13, 14,  14, 15, 12,
+  16, 17, 18,  18, 19, 16,
+  20, 21, 22,  22, 23, 20,
 };
 // clang-format on
 
@@ -191,7 +192,7 @@ void GDRenderer_Init(GDRenderer* this) {
   this->Impl.Context = context;
 
   if (!SDL_GL_SetSwapInterval(1)) {
-    printf("Warning: Failed to enable VSync: %s\n", SDL_GetError());
+    printf("Warn: Failed to enable VSync: %s\n", SDL_GetError());
   }
 
   this->Flags |= GDR_INIT_FLAG;
@@ -220,6 +221,11 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
 
   // <TEST>
   testGL();
+
+  GDGeometry geometry = GDGeometry_Create(
+    "Box",
+    testVertices, sizeof(testVertices) / sizeof(GDVertex),
+    testIndices, sizeof(testIndices) / sizeof(uint32_t));
 
   GDShader shader = GDShader_Load("Basic shader btw", "shaders/Basic.shader");
   if (!(shader.Flags & GDSHADER_INIT_FLAG)) {
@@ -282,19 +288,14 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
     GDMaterial_SetFloat(&basicMaterial, "time", sinf(this->Time * 10.0f));
     testAngle += this->DeltaTime;
 
-    glBindVertexArray(testVAO);
-
     GDMaterial_Use(&basicMaterial);
-
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    GDGeometry_Draw(&geometry);
 
     SDL_GL_SwapWindow(this->Impl.Window);
   }
 
   // <TEST>
-  glDeleteBuffers(1, &testEBO);
-  glDeleteBuffers(1, &testVBO);
-  glDeleteVertexArrays(1, &testVAO);
+  GDGeometry_Destroy(&geometry);
   GDShader_Destroy(&shader);
   GDMaterial_Destroy(&basicMaterial);
   // </TEST>

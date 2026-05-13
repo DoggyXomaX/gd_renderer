@@ -1,7 +1,6 @@
 #ifndef GDMATERIAL_HEADER
 #define GDMATERIAL_HEADER
 
-#include "GL/gl3w.h"
 #include "gd_shader.h"
 
 #include <stdint.h>
@@ -76,6 +75,8 @@ typedef struct GDMaterial_s {
 GDMaterial GDMaterial_Create(const char* name, GDShader* shader);
 void GDMaterial_Destroy(GDMaterial* this);
 void GDMaterial_Use(GDMaterial* this);
+
+// TODO: REAL TEXTURE FUCDK
 void GDMaterial_RegisterTexture(GDMaterial* this, const char* name);
 void GDMaterial_RegisterInt32(GDMaterial* this, const char* name);
 void GDMaterial_RegisterFloat(GDMaterial* this, const char* name);

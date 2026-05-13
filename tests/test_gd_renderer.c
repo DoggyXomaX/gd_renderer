@@ -9,6 +9,9 @@
 #define GDSHADER_SOURCE
 #include "gd_shader.h"
 
+#define GDGEOMETRY_SOURCE
+#include "gd_geometry.h"
+
 void test_gd_renderer() {
   testName("gd_renderer");
 

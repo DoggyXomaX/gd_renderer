@@ -41,23 +41,15 @@ void GDShader_SetMat4(GDShader* this, const char* name, float value[16]);
 #include <string.h>
 
 static GLuint createShader(GLenum type, const char* source) {
-  printf("DEBUG: create shader\n");
   GLuint shader = glCreateShader(type);
-
-  printf("DEBUG: connect source\n");
   glShaderSource(shader, 1, &source, NULL);
-
-  printf("DEBUG: compile shader\n");
   glCompileShader(shader);
 
   GLint isOK = 0;
-  printf("DEBUG: get compile status\n");
   glGetShaderiv(shader, GL_COMPILE_STATUS, &isOK);
 
   if (!isOK) {
     char log[GDSHADER_MAX_LOG_LEN] = { 0 };
-
-    printf("DEBUG: get compile status info log\n");
     glGetShaderInfoLog(shader, sizeof(log), NULL, log);
     fprintf(stderr, "Shader compile error: %s\n", log);
 
@@ -69,9 +61,7 @@ static GLuint createShader(GLenum type, const char* source) {
 }
 
 static GLuint createProgram(const char* vertexSource, const char* fragmentSource) {
-  printf("DEBUG: create vertex shader\n");
   GLuint vertexShader = createShader(GL_VERTEX_SHADER, vertexSource);
-  printf("DEBUG: create fragment shader\n");
   GLuint fragmentShader = createShader(GL_FRAGMENT_SHADER, fragmentSource);
 
   if (vertexShader == 0 || fragmentShader == 0) {
@@ -80,7 +70,6 @@ static GLuint createProgram(const char* vertexSource, const char* fragmentSource
     return 0;
   }
 
-  printf("DEBUG: create program\n");
   GLuint program = glCreateProgram();
 
   glAttachShader(program, vertexShader);
@@ -178,8 +167,6 @@ GDShader GDShader_Load(const char* name, const char* path) {
   }
 
   fclose(file);
-
-  printf("Vertex shader:\n{{{%s}}}\n\nFragment shader:\n{{{%s}}}\n", vertexShaderBuffer, fragmentShaderBuffer);
 
   GLuint program = createProgram(vertexShaderBuffer, fragmentShaderBuffer);
   if (!program) {
