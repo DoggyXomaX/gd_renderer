@@ -230,6 +230,7 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
         case SDL_EVENT_WINDOW_RESIZED: {
           this->Width = event->window.data1;
           this->Height = event->window.data2;
+          break;
         }
       }
     }
