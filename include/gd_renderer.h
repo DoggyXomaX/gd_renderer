@@ -1,6 +1,8 @@
 #ifndef GDRENDERER_HEADER
 #define GDRENDERER_HEADER
 
+#include "gd_shader.h"
+
 #include <GL/gl3w.h>
 #include <SDL3/SDL.h>
 #include <stdbool.h>
@@ -39,34 +41,11 @@ void GDRenderer_StartUpdate(GDRenderer* this);
 #ifdef GDRENDERER_SOURCE
 
 #include <stdio.h>
-#include <math.h>
 #include "m4f.h"
 
 static bool isGL3WInit = false;
 
-static const char* testVertexShader =
-  "#version 330 core\n"
-  "layout (location = 0) in vec3 aPosition;\n"
-  "layout (location = 1) in vec3 aColor;\n"
-  "\n"
-  "uniform mat4 uMvp;\n"
-  "\n"
-  "out vec3 vColor;\n"
-  "\n"
-  "void main(void) {\n"
-  "  vColor = aColor;\n"
-  "  gl_Position = uMvp * vec4(aPosition, 1.0);\n"
-  "}\n";
-
-static const char* testFragmentShader =
-  "#version 330 core\n"
-  "in vec3 vColor;\n"
-  "out vec4 FragColor;\n"
-  "\n"
-  "void main(void) {\n"
-  "  FragColor = vec4(vColor, 1.0);\n"
-  "}\n";
-
+// <TEST>
 // clang-format off
 static float testVertices[] = {
   // front, red
@@ -123,64 +102,7 @@ float testAngle = 0.0f;
 m4f view, model, project;
 m4f rotationX, rotationY, viewModel, mvp;
 
-static GLuint testCreateShader(GLenum type, const char* source) {
-  GLuint shader = glCreateShader(type);
-
-  glShaderSource(shader, 1, &source, NULL);
-  glCompileShader(shader);
-
-  GLint isCompiled = 0;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
-
-  if (!isCompiled) {
-    char log[1024];
-
-    glGetShaderInfoLog(shader, sizeof(log), NULL, log);
-    fprintf(stderr, "Shader compile error: %s\n", log);
-
-    glDeleteShader(shader);
-    return 0;
-  }
-
-  return shader;
-}
-
-static GLuint createProgram(const char* vertexSource, const char* fragmentSource) {
-  GLuint vertexShader = testCreateShader(GL_VERTEX_SHADER, vertexSource);
-  GLuint fragmentShader = testCreateShader(GL_FRAGMENT_SHADER, fragmentSource);
-
-  if (vertexShader == 0 || fragmentShader == 0) {
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    return 0;
-  }
-
-  GLuint program = glCreateProgram();
-
-  glAttachShader(program, vertexShader);
-  glAttachShader(program, fragmentShader);
-  glLinkProgram(program);
-
-  glDeleteShader(vertexShader);
-  glDeleteShader(fragmentShader);
-
-  GLint isLinked = 0;
-  glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
-
-  if (!isLinked) {
-    char log[1024];
-
-    glGetProgramInfoLog(program, sizeof(log), NULL, log);
-    fprintf(stderr, "Program link error: %s\n", log);
-
-    glDeleteProgram(program);
-    return 0;
-  }
-
-  return program;
-}
-
-GLuint testGL() {
+void testGL() {
   m4f_identity(&view);
   m4f_identity(&model);
   m4f_identity(&project);
@@ -209,9 +131,8 @@ GLuint testGL() {
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
-
-  return createProgram(testVertexShader, testFragmentShader);
 }
+// </TEST>
 
 GDRenderer GDRenderer_New(const char* title, uint32_t width, uint32_t height) {
   GDRenderer renderer = {
@@ -299,13 +220,14 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
     return;
   }
 
-  // TEST
-  GLuint testProgram = testGL();
-  if (!testProgram) {
+  // <TEST>
+  testGL();
+  GDShader shader = GDShader_Load("Basic", "shaders/Basic.shader");
+  if (!(shader.Flags & GDSHADER_INIT_FLAG)) {
     return;
   }
-  GLint mvpLocation = glGetUniformLocation(testProgram, "uMvp");
-  // TEST
+  GLint mvpLocation = glGetUniformLocation(shader.Program, "uMvp");
+  // </TEST>
 
   glViewport(0, 0, this->Width, this->Height);
   glClearColor(0.0, 1.0, 0.0, 1.0);
@@ -332,7 +254,6 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
       case SDL_EVENT_WINDOW_RESIZED: {
         this->Width = event->window.data1;
         this->Height = event->window.data2;
-        // glViewport(0, 0, event->window.data1, event->window.data2);
       }
       }
     }
@@ -340,76 +261,36 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // TEST
-
-    // Perspective
     int pixelWidth, pixelHeight;
     SDL_GetWindowSizeInPixels(this->Impl.Window, &pixelWidth, &pixelHeight);
     float aspect = (float)pixelWidth / (float)pixelHeight;
     glViewport(0, 0, pixelWidth, pixelHeight);
 
-    // TODO: m4_perspective(70.0 * 3.141592 / 180.0, aspect, 0.1, 100.0);
-    float fovY = 70.0f * 3.141592f / 180.0f;
-    float near = 0.1f;
-    float far = 100.0f;
-    float f = 1.0f / tanf(fovY * 0.5f);
-    m4f_set(
-      &project,
-      f / aspect, 0, 0, 0,
-      0, f, 0, 0,
-      0, 0, (far + near) / (near - far), (2.0f * far * near) / (near - far),
-      0, 0, -1.0f, 1);
-
-    // TODO: m4_translate(0.0, 0.0, 3.0)
-    m4f_set(
-      &view,
-      1, 0, 0, 0.0f,
-      0, 1, 0, 0.0f,
-      0, 0, 1, -3.0f,
-      0, 0, 0, 1);
-
-    // TODO: m4_rotateX?
-    float cx = cos(testAngle * 0.7f);
-    float sx = sin(testAngle * 0.7f);
-    m4f_set(
-      &rotationX,
-      1, 0, 0, 0,
-      0, cx, -sx, 0,
-      0, sx, cx, 0,
-      0, 0, 0, 1);
-
-    // TODO: m4_rotateY?
-    float cy = cos(testAngle);
-    float sy = sin(testAngle);
-    m4f_set(
-      &rotationY,
-      cy, 0, sy, 0,
-      0, 1, 0, 0,
-      -sy, 0, cy, 0,
-      0, 0, 0, 1);
-
-    testAngle += this->DeltaTime;
-
+    // <TEST>
+    m4f_move(&view, 0.0f, 0.0f, -3.0f);
+    m4f_project(&project, 70.0f, aspect, 0.1f, 100.0f);
+    m4f_rotx(&rotationX, testAngle * 0.7f);
+    m4f_roty(&rotationY, testAngle);
     m4f_mul(&model, &rotationY, &rotationX);
     m4f_mul(&viewModel, &view, &model);
     m4f_mul(&mvp, &project, &viewModel);
+    testAngle += this->DeltaTime;
 
-    glUseProgram(testProgram);
+    glUseProgram(shader.Program);
     glBindVertexArray(testVAO);
     glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, mvp.raw);
-
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-    // TEST
+    // </TEST>
 
     SDL_GL_SwapWindow(this->Impl.Window);
   }
 
-  // TEST
+  // <TEST>
   glDeleteBuffers(1, &testEBO);
   glDeleteBuffers(1, &testVBO);
   glDeleteVertexArrays(1, &testVAO);
-  glDeleteProgram(testProgram);
-  // TEST
+  GDShader_Destroy(&shader);
+  // </TEST>
 }
 
 #undef GDRENDERER_SOURCE

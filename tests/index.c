@@ -4,19 +4,7 @@
 #define M4F_SOURCE
 #include "m4f.h"
 
-#define GDRENDERER_SOURCE
-#include "gd_renderer.h"
-
-void test_gd_renderer() {
-  testName("gd_renderer");
-
-  GDRenderer renderer = GDRenderer_New("Test Window", 800, 600);
-
-  GDRenderer_Init(&renderer);
-  GDRenderer_StartUpdate(&renderer);
-
-  test(1, "TODO: renderer test");
-}
+#include "test_gd_renderer.c"
 
 int main() {
   test_gd_renderer();
