@@ -22,12 +22,23 @@ typedef struct GDShader_s {
 
 GDShader GDShader_Load(const char* name, const char* path);
 void GDShader_Destroy(GDShader* this);
+void GDShader_Use(GDShader* this);
+void GDShader_SetTexture(GDShader* this, const char* name, int32_t value);
+void GDShader_SetInt32(GDShader* this, const char* name, int32_t value);
+void GDShader_SetFloat(GDShader* this, const char* name, float value);
+void GDShader_SetVec2(GDShader* this, const char* name, float value[2]);
+void GDShader_SetVec3(GDShader* this, const char* name, float value[3]);
+void GDShader_SetVec4(GDShader* this, const char* name, float value[4]);
+void GDShader_SetMat2(GDShader* this, const char* name, float value[4]);
+void GDShader_SetMat3(GDShader* this, const char* name, float value[9]);
+void GDShader_SetMat4(GDShader* this, const char* name, float value[16]);
 
 #endif
 /* =============================== */
 #ifdef GDSHADER_SOURCE
 
 #include <stdio.h>
+#include <string.h>
 
 static GLuint createShader(GLenum type, const char* source) {
   printf("DEBUG: create shader\n");
@@ -93,6 +104,10 @@ static GLuint createProgram(const char* vertexSource, const char* fragmentSource
   }
 
   return program;
+}
+
+static inline GLuint getUniformLocation(GDShader* this, const char* name) {
+  return glGetUniformLocation(this->Program, name);
 }
 
 GDShader GDShader_Load(const char* name, const char* path) {
@@ -179,6 +194,78 @@ GDShader GDShader_Load(const char* name, const char* path) {
 
 void GDShader_Destroy(GDShader* this) {
   glDeleteProgram(this->Program);
+}
+
+void GDShader_Use(GDShader* this) {
+  if (!(this->Flags & GDSHADER_INIT_FLAG) || !this->Program) {
+    printf("Warn: can't use uninitialized shader! Skip\n");
+    return;
+  }
+
+  glUseProgram(this->Program);
+}
+
+void GDShader_SetTexture(GDShader* this, const char* name, int32_t value) {
+  GLint location = getUniformLocation(this, name);
+  if (location >= 0) {
+    glUniform1i(location, value);
+  }
+}
+
+void GDShader_SetInt32(GDShader* this, const char* name, int32_t value) {
+  GLint location = getUniformLocation(this, name);
+  if (location >= 0) {
+    glUniform1i(location, value);
+  }
+}
+
+void GDShader_SetFloat(GDShader* this, const char* name, float value) {
+  GLint location = getUniformLocation(this, name);
+  if (location >= 0) {
+    glUniform1f(location, value);
+  }
+}
+
+void GDShader_SetVec2(GDShader* this, const char* name, float value[2]) {
+  GLint location = getUniformLocation(this, name);
+  if (location >= 0) {
+    glUniform2fv(location, 1, value);
+  }
+}
+
+void GDShader_SetVec3(GDShader* this, const char* name, float value[3]) {
+  GLint location = getUniformLocation(this, name);
+  if (location >= 0) {
+    glUniform3fv(location, 1, value);
+  }
+}
+
+void GDShader_SetVec4(GDShader* this, const char* name, float value[4]) {
+  GLint location = getUniformLocation(this, name);
+  if (location >= 0) {
+    glUniform4fv(location, 1, value);
+  }
+}
+
+void GDShader_SetMat2(GDShader* this, const char* name, float value[4]) {
+  GLint location = getUniformLocation(this, name);
+  if (location >= 0) {
+    glUniformMatrix2fv(location, 1, GL_FALSE, value);
+  }
+}
+
+void GDShader_SetMat3(GDShader* this, const char* name, float value[9]) {
+  GLint location = getUniformLocation(this, name);
+  if (location >= 0) {
+    glUniformMatrix3fv(location, 1, GL_FALSE, value);
+  }
+}
+
+void GDShader_SetMat4(GDShader* this, const char* name, float value[16]) {
+  GLint location = getUniformLocation(this, name);
+  if (location >= 0) {
+    glUniformMatrix4fv(location, 1, GL_FALSE, value);
+  }
 }
 
 #undef GDSHADER_SOURCE

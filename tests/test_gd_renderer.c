@@ -3,6 +3,9 @@
 #define GDRENDERER_SOURCE
 #include "gd_renderer.h"
 
+#define GDMATERIAL_SOURCE
+#include "gd_material.h"
+
 #define GDSHADER_SOURCE
 #include "gd_shader.h"
 

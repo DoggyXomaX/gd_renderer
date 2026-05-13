@@ -1,12 +1,14 @@
 #ifndef GDRENDERER_HEADER
 #define GDRENDERER_HEADER
 
+#include "gd_material.h"
 #include "gd_shader.h"
 
 #include <GL/gl3w.h>
 #include <SDL3/SDL.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 
 #define GDR_INIT_FLAG (1 << 0)
 #define GDR_RUNNING_FLAG (1 << 1)
@@ -99,14 +101,10 @@ GLuint testVAO = 0;
 GLuint testVBO = 0;
 GLuint testEBO = 0;
 float testAngle = 0.0f;
-m4f view, model, project;
+m4f view, model, projection;
 m4f rotationX, rotationY, viewModel, mvp;
 
 void testGL() {
-  m4f_identity(&view);
-  m4f_identity(&model);
-  m4f_identity(&project);
-
   glEnable(GL_DEPTH_TEST);
 
   glGenVertexArrays(1, &testVAO);
@@ -222,11 +220,17 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
 
   // <TEST>
   testGL();
-  GDShader shader = GDShader_Load("Basic", "shaders/Basic.shader");
+
+  GDShader shader = GDShader_Load("Basic shader btw", "shaders/Basic.shader");
   if (!(shader.Flags & GDSHADER_INIT_FLAG)) {
     return;
   }
-  GLint mvpLocation = glGetUniformLocation(shader.Program, "uMvp");
+
+  GDMaterial basicMaterial = GDMaterial_Create("Basic material btw", &shader);
+  GDMaterial_RegisterMat4(&basicMaterial, "projection");
+  GDMaterial_RegisterMat4(&basicMaterial, "view");
+  GDMaterial_RegisterMat4(&basicMaterial, "model");
+  GDMaterial_RegisterFloat(&basicMaterial, "time");
   // </TEST>
 
   glViewport(0, 0, this->Width, this->Height);
@@ -267,20 +271,22 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
     glViewport(0, 0, pixelWidth, pixelHeight);
 
     // <TEST>
-    m4f_move(&view, 0.0f, 0.0f, -3.0f);
-    m4f_project(&project, 70.0f, aspect, 0.1f, 100.0f);
     m4f_rotx(&rotationX, testAngle * 0.7f);
     m4f_roty(&rotationY, testAngle);
+    m4f_project(&projection, 70.0f, aspect, 0.1f, 100.0f);
+    m4f_move(&view, 0.0f, 0.0f, -3.0f);
     m4f_mul(&model, &rotationY, &rotationX);
-    m4f_mul(&viewModel, &view, &model);
-    m4f_mul(&mvp, &project, &viewModel);
+    GDMaterial_SetMat4(&basicMaterial, "projection", projection.raw);
+    GDMaterial_SetMat4(&basicMaterial, "view", view.raw);
+    GDMaterial_SetMat4(&basicMaterial, "model", model.raw);
+    GDMaterial_SetFloat(&basicMaterial, "time", sinf(this->Time * 10.0f));
     testAngle += this->DeltaTime;
 
-    glUseProgram(shader.Program);
     glBindVertexArray(testVAO);
-    glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, mvp.raw);
+
+    GDMaterial_Use(&basicMaterial);
+
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-    // </TEST>
 
     SDL_GL_SwapWindow(this->Impl.Window);
   }
@@ -290,6 +296,7 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
   glDeleteBuffers(1, &testVBO);
   glDeleteVertexArrays(1, &testVAO);
   GDShader_Destroy(&shader);
+  GDMaterial_Destroy(&basicMaterial);
   // </TEST>
 }
 
