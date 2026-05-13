@@ -98,40 +98,9 @@ static uint32_t testIndices[] = {
 };
 // clang-format on
 
-GLuint testVAO = 0;
-GLuint testVBO = 0;
-GLuint testEBO = 0;
 float testAngle = 0.0f;
 m4f view, model, projection;
 m4f rotationX, rotationY, viewModel, mvp;
-
-void testGL() {
-  glEnable(GL_DEPTH_TEST);
-
-  glGenVertexArrays(1, &testVAO);
-  glGenBuffers(1, &testVBO);
-  glGenBuffers(1, &testEBO);
-
-  glBindVertexArray(testVAO);
-
-  glBindBuffer(GL_ARRAY_BUFFER, testVBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(testVertices), testVertices, GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, testEBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(testIndices), testIndices, GL_STATIC_DRAW);
-
-  // position
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(0);
-
-  // color
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glBindVertexArray(0);
-}
-// </TEST>
 
 GDRenderer GDRenderer_New(const char* title, uint32_t width, uint32_t height) {
   GDRenderer renderer = {
@@ -219,9 +188,6 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
     return;
   }
 
-  // <TEST>
-  testGL();
-
   GDGeometry geometry = GDGeometry_Create(
     "Box",
     testVertices, sizeof(testVertices) / sizeof(GDVertex),
@@ -237,8 +203,8 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
   GDMaterial_RegisterMat4(&basicMaterial, "view");
   GDMaterial_RegisterMat4(&basicMaterial, "model");
   GDMaterial_RegisterFloat(&basicMaterial, "time");
-  // </TEST>
 
+  glEnable(GL_DEPTH_TEST);
   glViewport(0, 0, this->Width, this->Height);
   glClearColor(0.0, 1.0, 0.0, 1.0);
 
