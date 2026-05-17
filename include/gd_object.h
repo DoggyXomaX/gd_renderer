@@ -173,7 +173,6 @@ v3f GDObject_GetUp(GDObject* this) {
 }
 
 void GDObject_UpdateMatrix(GDObject* this) {
-  printf("Update matrix\n");
   // Create local matrix
   if (this->Flags & GDOBJECT_NEEDUPDATEMATRIX_FLAG) {
     this->Flags &= ~(GDOBJECT_NEEDUPDATEMATRIX_FLAG);

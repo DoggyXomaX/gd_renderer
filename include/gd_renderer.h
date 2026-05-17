@@ -194,24 +194,35 @@ void GDRenderer_StartUpdate(GDRenderer* this, void (*onUpdate)(GDRenderer* this)
   }
 
   // !!!!NEED REMOVE!!!!!
-  GDGeometry geometry = GDGeometry_Create(
+  GDGeometry cubeGeometry = GDGeometry_Create(
     "Box",
     testVertices, sizeof(testVertices) / sizeof(GDVertex),
     testIndices, sizeof(testIndices) / sizeof(uint32_t));
 
-  GDShader shader = GDShader_Load("Basic", "shaders/Basic.shader");
-  if (!(shader.Flags & GDSHADER_INIT_FLAG)) {
+  GDShader basicShader = GDShader_Load("Basic", "shaders/Basic.shader");
+  GDShader gridShader = GDShader_Load("Grid", "shaders/Grid.shader");
+  if (!(basicShader.Flags & GDSHADER_INIT_FLAG) || !(gridShader.Flags & GDSHADER_INIT_FLAG)) {
     return;
   }
 
-  GDMaterial basicMaterial = GDMaterial_Create("Basic", &shader);
+  GDMaterial basicMaterial = GDMaterial_Create("Basic", &basicShader);
   GDMaterial_RegisterMat4(&basicMaterial, "projectionMatrix");
   GDMaterial_RegisterMat4(&basicMaterial, "viewMatrix");
   GDMaterial_RegisterMat4(&basicMaterial, "modelMatrix");
   GDMaterial_RegisterVec4(&basicMaterial, "color");
   GDMaterial_RegisterFloat(&basicMaterial, "time");
 
+  GDMaterial gridMaterial = GDMaterial_Create("Grid", &gridShader);
+  GDMaterial_RegisterMat4(&gridMaterial, "projectionMatrix");
+  GDMaterial_RegisterMat4(&gridMaterial, "viewMatrix");
+  GDMaterial_RegisterMat4(&gridMaterial, "modelMatrix");
+
   GDObject scene = GDObject_Create("Scene1", GDOBJECT_TYPE_EMPTY);
+
+  GDMesh grid = GDMesh_Create("Grid", &cubeGeometry, &gridMaterial);
+  GDObject_AddChild(&scene, &grid.Object);
+  GDObject_SetPosition(&grid.Object, 0.0f, -0.01f, 0.0f);
+  GDObject_SetScale(&grid.Object, 10.0f, 0.01f, 10.0f);
 
   GDObject cameraWrapper = GDObject_Create("CameraWrapper1", GDOBJECT_TYPE_EMPTY);
   GDObject_AddChild(&scene, &cameraWrapper);
@@ -222,30 +233,54 @@ void GDRenderer_StartUpdate(GDRenderer* this, void (*onUpdate)(GDRenderer* this)
 
   float lineWidth = 0.01f;
 
-  GDMesh axisX = GDMesh_Create("AxisX", &geometry, &basicMaterial);
+  GDMesh axisX = GDMesh_Create("AxisX", &cubeGeometry, &basicMaterial);
   GDObject_AddChild(&scene, &axisX.Object);
   GDObject_SetPosition(&axisX.Object, 0.5f, 0.0f, 0.0f);
   GDObject_SetScale(&axisX.Object, 1.0f, lineWidth, lineWidth);
 
-  GDMesh axisY = GDMesh_Create("AxisY", &geometry, &basicMaterial);
+  GDMesh axisY = GDMesh_Create("AxisY", &cubeGeometry, &basicMaterial);
   GDObject_AddChild(&scene, &axisY.Object);
   GDObject_SetPosition(&axisY.Object, 0.0f, 0.5f, 0.0f);
   GDObject_SetScale(&axisY.Object, lineWidth, 1.0f, lineWidth);
 
-  GDMesh axisZ = GDMesh_Create("AxisZ", &geometry, &basicMaterial);
+  GDMesh axisZ = GDMesh_Create("AxisZ", &cubeGeometry, &basicMaterial);
   GDObject_AddChild(&scene, &axisZ.Object);
   GDObject_SetPosition(&axisZ.Object, 0.0f, 0.0f, 0.5f);
   GDObject_SetScale(&axisZ.Object, lineWidth, lineWidth, 1.0f);
 
-  GDMesh mesh1 = GDMesh_Create("Mesh1", &geometry, &basicMaterial);
+  GDMesh mesh1 = GDMesh_Create("Mesh1", &cubeGeometry, &basicMaterial);
   GDObject_AddChild(&scene, &mesh1.Object);
   GDObject_SetPosition(&mesh1.Object, 0.5f, 0.5f, 0.5f);
   GDObject_SetScale(&mesh1.Object, 0.5f, 0.5f, 0.5f);
 
-  GDMesh mesh2 = GDMesh_Create("Mesh2", &geometry, &basicMaterial);
+  GDMesh mesh2 = GDMesh_Create("Mesh2", &cubeGeometry, &basicMaterial);
   GDObject_SetPosition(&mesh2.Object, 0.0f, 0.75f, 0.0f);
   GDObject_SetScale(&mesh2.Object, 0.5f, 0.5f, 0.5f);
   GDObject_AddChild(&mesh1.Object, &mesh2.Object);
+
+  GDMesh mesh3 = GDMesh_Create("Mesh3", &cubeGeometry, &basicMaterial);
+  GDObject_SetPosition(&mesh3.Object, 0.0f, 0.0f, 0.0f);
+  GDObject_SetScale(&mesh3.Object, 1.0f, 0.99f, 1.0f);
+  GDObject_SetEuler(&mesh3.Object, 0.0f, 45.0f * DEG2RAD, 0.0f);
+  GDObject_AddChild(&mesh2.Object, &mesh3.Object);
+
+  GDMesh bullet = GDMesh_Create("Bullet", &cubeGeometry, &basicMaterial);
+  GDObject_SetPosition(&bullet.Object, 0.0f, 2.0f, 0.0f);
+  GDObject_SetScale(&bullet.Object, 0.05f, 0.1f, 0.05f);
+  GDObject_AddChild(&mesh1.Object, &bullet.Object);
+
+  GDMesh guns[6];
+  float deltaAngle = (M_PI * 2.0f) / 6.0f;
+  float x = 0.0f;
+  float y = 0.0f;
+  for (int i = 0; i < 6; i++) {
+    x = cosf(deltaAngle * (float)i);
+    y = sinf(deltaAngle * (float)i);
+    guns[i] = GDMesh_Create("G0", &cubeGeometry, &basicMaterial);
+    GDObject_SetPosition(&guns[i].Object, x * 0.3f, 0.75f, y * 0.3f);
+    GDObject_SetScale(&guns[i].Object, 0.1f, 0.5f, 0.1f);
+    GDObject_AddChild(&mesh2.Object, &guns[i].Object);
+  }
   // /!!!!NEED REMOVE!!!!!
 
   glEnable(GL_DEPTH_TEST);
@@ -291,48 +326,37 @@ void GDRenderer_StartUpdate(GDRenderer* this, void (*onUpdate)(GDRenderer* this)
       onUpdate(this);
     }
 
-    GDObject_SetEuler(&cameraWrapper, 45.0f * DEG2RAD, testAngle, 0.0f * DEG2RAD);
-    GDObject_SetEuler(&mesh1.Object, testAngle * 0.1f, 0.0f, 0.0f);
-    GDObject_SetEuler(&mesh2.Object, 0.0f, testAngle * 2.0f, 0.0f);
-    // GDObject_SetEuler(&axisZ.Object, testAngle, 0.0f, 0.0f);
-    testAngle += this->DeltaTime;
+    // !!!!!!!!!!NEEED REMOVE !!!!!!
+    {
+      GDObject_SetEuler(&cameraWrapper, 45.0f * DEG2RAD, testAngle, 0.0f * DEG2RAD);
+      GDObject_SetEuler(&mesh1.Object, testAngle * 0.1f, 0.0f, 0.0f);
+      GDObject_SetEuler(&mesh2.Object, 0.0f, testAngle * 2.0f, 0.0f);
+      GDObject_SetPosition(&bullet.Object, 0.0f, fmod(this->Time * 4.0f, 0.5f) * 20.0f, 0.0f);
+      testAngle += this->DeltaTime;
 
-    if (camera.Aspect != aspect) {
-      camera.Aspect = aspect;
-      camera.Flags |= GDCAMERA_NEEDUPDATEMATRIX_FLAG;
+      if (camera.Aspect != aspect) {
+        camera.Aspect = aspect;
+        camera.Flags |= GDCAMERA_NEEDUPDATEMATRIX_FLAG;
+      }
+      GDRenderer_Render(this, &scene, &camera);
     }
-    GDRenderer_Render(this, &scene, &camera);
-
-    // !!!!!!!!!!NEEED REMOVE !!!!!!
-    // m4f_rotx(&rotationX, testAngle * 0.7f);
-    // m4f_roty(&rotationY, testAngle);
-    // m4f_project(&projection, 70.0f, aspect, 0.1f, 100.0f);
-    // m4f_move(&view, 0.0f, 0.0f, -3.0f);
-    // m4f_mul(&model, &rotationY, &rotationX);
-    // GDMaterial_SetMat4(&basicMaterial, "projection", projection.raw);
-    // GDMaterial_SetMat4(&basicMaterial, "view", view.raw);
-    // GDMaterial_SetMat4(&basicMaterial, "model", model.raw);
-    // GDMaterial_SetFloat(&basicMaterial, "time", sinf(this->Time * 10.0f));
-    // testAngle += this->DeltaTime;
-
-    // GDMaterial_Use(&basicMaterial);
-    // GDGeometry_Draw(&geometry);
-    // !!!!!!!!!!NEEED REMOVE !!!!!!
-
     SDL_GL_SwapWindow(this->Impl.Window);
   }
 
   // !!!!!!!!!!NEEED REMOVE !!!!!!
-  GDGeometry_Destroy(&geometry);
-  GDShader_Destroy(&shader);
-  GDMaterial_Destroy(&basicMaterial);
-  GDObject_Destroy(&scene);
-  GDCamera_Destroy(&camera);
-  GDMesh_Destroy(&axisX);
-  GDMesh_Destroy(&axisY);
-  GDMesh_Destroy(&axisZ);
-  GDMesh_Destroy(&mesh1);
-  // !!!!!!!!!!NEEED REMOVE !!!!!!
+  {
+    GDGeometry_Destroy(&cubeGeometry);
+    GDShader_Destroy(&basicShader);
+    GDShader_Destroy(&gridShader);
+    GDMaterial_Destroy(&basicMaterial);
+    GDMaterial_Destroy(&gridMaterial);
+    GDObject_Destroy(&scene);
+    GDCamera_Destroy(&camera);
+    GDMesh_Destroy(&axisX);
+    GDMesh_Destroy(&axisY);
+    GDMesh_Destroy(&axisZ);
+    GDMesh_Destroy(&mesh1);
+  }
 }
 
 void GDRenderer_Render(GDRenderer* this, GDObject* object, GDCamera* camera) {
@@ -341,9 +365,6 @@ void GDRenderer_Render(GDRenderer* this, GDObject* object, GDCamera* camera) {
   }
 
   if (object->Flags & GDOBJECT_NEEDUPDATEMATRIX_FLAG) {
-    if (strcmp(object->ID, "CameraWrapper1") == 0) {
-      printf("CameraWrapper1 found!\n");
-    }
     GDObject_UpdateMatrix(object);
   }
 
