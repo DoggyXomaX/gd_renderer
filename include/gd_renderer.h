@@ -1,19 +1,25 @@
 #ifndef GDRENDERER_HEADER
 #define GDRENDERER_HEADER
 
+#include "SDL3/SDL_events.h"
 #include "gd_geometry.h"
 #include "gd_material.h"
+#include "gd_mesh.h"
 #include "gd_shader.h"
+#include "gd_camera.h"
 
 #include <GL/gl3w.h>
 #include <SDL3/SDL.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <math.h>
+#include <string.h>
 
 #define GDR_INIT_FLAG (1 << 0)
 #define GDR_RUNNING_FLAG (1 << 1)
 #define GDR_API_INIT_FLAG (1 << 2)
+
+#define M_PI 3.1415920
+static const float DEG2RAD = (float)M_PI / 180.0f;
 
 typedef struct GDRendererOpenGLImpl_s {
   SDL_Window* Window;
@@ -37,7 +43,8 @@ typedef struct GDRenderer_s {
 GDRenderer GDRenderer_New(const char* title, uint32_t width, uint32_t height);
 void GDRenderer_Init(GDRenderer* this);
 void GDRenderer_Destroy(GDRenderer* this);
-void GDRenderer_StartUpdate(GDRenderer* this);
+void GDRenderer_StartUpdate(GDRenderer* this, void (*onUpdate)(GDRenderer* this));
+void GDRenderer_Render(GDRenderer* this, GDObject* object, GDCamera* camera);
 
 #endif
 /* =============================== */
@@ -99,8 +106,6 @@ static uint32_t testIndices[] = {
 // clang-format on
 
 float testAngle = 0.0f;
-m4f view, model, projection;
-m4f rotationX, rotationY, viewModel, mvp;
 
 GDRenderer GDRenderer_New(const char* title, uint32_t width, uint32_t height) {
   GDRenderer renderer = {
@@ -183,30 +188,67 @@ void GDRenderer_Destroy(GDRenderer* this) {
   this->Flags = 0;
 }
 
-void GDRenderer_StartUpdate(GDRenderer* this) {
+void GDRenderer_StartUpdate(GDRenderer* this, void (*onUpdate)(GDRenderer* this)) {
   if (!(this->Flags & GDR_INIT_FLAG)) {
     return;
   }
 
+  // !!!!NEED REMOVE!!!!!
   GDGeometry geometry = GDGeometry_Create(
     "Box",
     testVertices, sizeof(testVertices) / sizeof(GDVertex),
     testIndices, sizeof(testIndices) / sizeof(uint32_t));
 
-  GDShader shader = GDShader_Load("Basic shader btw", "shaders/Basic.shader");
+  GDShader shader = GDShader_Load("Basic", "shaders/Basic.shader");
   if (!(shader.Flags & GDSHADER_INIT_FLAG)) {
     return;
   }
 
-  GDMaterial basicMaterial = GDMaterial_Create("Basic material btw", &shader);
-  GDMaterial_RegisterMat4(&basicMaterial, "projection");
-  GDMaterial_RegisterMat4(&basicMaterial, "view");
-  GDMaterial_RegisterMat4(&basicMaterial, "model");
+  GDMaterial basicMaterial = GDMaterial_Create("Basic", &shader);
+  GDMaterial_RegisterMat4(&basicMaterial, "projectionMatrix");
+  GDMaterial_RegisterMat4(&basicMaterial, "viewMatrix");
+  GDMaterial_RegisterMat4(&basicMaterial, "modelMatrix");
+  GDMaterial_RegisterVec4(&basicMaterial, "color");
   GDMaterial_RegisterFloat(&basicMaterial, "time");
 
+  GDObject scene = GDObject_Create("Scene1", GDOBJECT_TYPE_EMPTY);
+
+  GDObject cameraWrapper = GDObject_Create("CameraWrapper1", GDOBJECT_TYPE_EMPTY);
+  GDObject_AddChild(&scene, &cameraWrapper);
+
+  GDCamera camera = GDCamera_Create("Camera1", 70.0f, 1.0f, 0.1f, 100.0f);
+  GDObject_SetPosition(&camera.Object, 0.0f, 0.0f, -3.0f);
+  GDObject_AddChild(&cameraWrapper, &camera.Object);
+
+  float lineWidth = 0.01f;
+
+  GDMesh axisX = GDMesh_Create("AxisX", &geometry, &basicMaterial);
+  GDObject_AddChild(&scene, &axisX.Object);
+  GDObject_SetPosition(&axisX.Object, 0.5f, 0.0f, 0.0f);
+  GDObject_SetScale(&axisX.Object, 1.0f, lineWidth, lineWidth);
+
+  GDMesh axisY = GDMesh_Create("AxisY", &geometry, &basicMaterial);
+  GDObject_AddChild(&scene, &axisY.Object);
+  GDObject_SetPosition(&axisY.Object, 0.0f, 0.5f, 0.0f);
+  GDObject_SetScale(&axisY.Object, lineWidth, 1.0f, lineWidth);
+
+  GDMesh axisZ = GDMesh_Create("AxisZ", &geometry, &basicMaterial);
+  GDObject_AddChild(&scene, &axisZ.Object);
+  GDObject_SetPosition(&axisZ.Object, 0.0f, 0.0f, 0.5f);
+  GDObject_SetScale(&axisZ.Object, lineWidth, lineWidth, 1.0f);
+
+  GDMesh mesh1 = GDMesh_Create("Mesh1", &geometry, &basicMaterial);
+  GDObject_AddChild(&scene, &mesh1.Object);
+  GDObject_SetPosition(&mesh1.Object, 0.5f, 0.5f, 0.5f);
+  GDObject_SetScale(&mesh1.Object, 0.5f, 0.5f, 0.5f);
+
+  GDMesh mesh2 = GDMesh_Create("Mesh2", &geometry, &basicMaterial);
+  GDObject_SetPosition(&mesh2.Object, 0.0f, 0.75f, 0.0f);
+  GDObject_SetScale(&mesh2.Object, 0.5f, 0.5f, 0.5f);
+  GDObject_AddChild(&mesh1.Object, &mesh2.Object);
+  // /!!!!NEED REMOVE!!!!!
+
   glEnable(GL_DEPTH_TEST);
-  glViewport(0, 0, this->Width, this->Height);
-  glClearColor(0.0, 1.0, 0.0, 1.0);
 
   this->Flags |= GDR_RUNNING_FLAG;
 
@@ -232,6 +274,8 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
           this->Height = event->window.data2;
           break;
         }
+        case SDL_EVENT_KEY_DOWN: {
+        }
       }
     }
 
@@ -243,29 +287,100 @@ void GDRenderer_StartUpdate(GDRenderer* this) {
     float aspect = (float)pixelWidth / (float)pixelHeight;
     glViewport(0, 0, pixelWidth, pixelHeight);
 
-    // <TEST>
-    m4f_rotx(&rotationX, testAngle * 0.7f);
-    m4f_roty(&rotationY, testAngle);
-    m4f_project(&projection, 70.0f, aspect, 0.1f, 100.0f);
-    m4f_move(&view, 0.0f, 0.0f, -3.0f);
-    m4f_mul(&model, &rotationY, &rotationX);
-    GDMaterial_SetMat4(&basicMaterial, "projection", projection.raw);
-    GDMaterial_SetMat4(&basicMaterial, "view", view.raw);
-    GDMaterial_SetMat4(&basicMaterial, "model", model.raw);
-    GDMaterial_SetFloat(&basicMaterial, "time", sinf(this->Time * 10.0f));
+    if (onUpdate != NULL) {
+      onUpdate(this);
+    }
+
+    GDObject_SetEuler(&cameraWrapper, 45.0f * DEG2RAD, testAngle, 0.0f * DEG2RAD);
+    GDObject_SetEuler(&mesh1.Object, testAngle * 0.1f, 0.0f, 0.0f);
+    GDObject_SetEuler(&mesh2.Object, 0.0f, testAngle * 2.0f, 0.0f);
+    // GDObject_SetEuler(&axisZ.Object, testAngle, 0.0f, 0.0f);
     testAngle += this->DeltaTime;
 
-    GDMaterial_Use(&basicMaterial);
-    GDGeometry_Draw(&geometry);
+    if (camera.Aspect != aspect) {
+      camera.Aspect = aspect;
+      camera.Flags |= GDCAMERA_NEEDUPDATEMATRIX_FLAG;
+    }
+    GDRenderer_Render(this, &scene, &camera);
+
+    // !!!!!!!!!!NEEED REMOVE !!!!!!
+    // m4f_rotx(&rotationX, testAngle * 0.7f);
+    // m4f_roty(&rotationY, testAngle);
+    // m4f_project(&projection, 70.0f, aspect, 0.1f, 100.0f);
+    // m4f_move(&view, 0.0f, 0.0f, -3.0f);
+    // m4f_mul(&model, &rotationY, &rotationX);
+    // GDMaterial_SetMat4(&basicMaterial, "projection", projection.raw);
+    // GDMaterial_SetMat4(&basicMaterial, "view", view.raw);
+    // GDMaterial_SetMat4(&basicMaterial, "model", model.raw);
+    // GDMaterial_SetFloat(&basicMaterial, "time", sinf(this->Time * 10.0f));
+    // testAngle += this->DeltaTime;
+
+    // GDMaterial_Use(&basicMaterial);
+    // GDGeometry_Draw(&geometry);
+    // !!!!!!!!!!NEEED REMOVE !!!!!!
 
     SDL_GL_SwapWindow(this->Impl.Window);
   }
 
-  // <TEST>
+  // !!!!!!!!!!NEEED REMOVE !!!!!!
   GDGeometry_Destroy(&geometry);
   GDShader_Destroy(&shader);
   GDMaterial_Destroy(&basicMaterial);
-  // </TEST>
+  GDObject_Destroy(&scene);
+  GDCamera_Destroy(&camera);
+  GDMesh_Destroy(&axisX);
+  GDMesh_Destroy(&axisY);
+  GDMesh_Destroy(&axisZ);
+  GDMesh_Destroy(&mesh1);
+  // !!!!!!!!!!NEEED REMOVE !!!!!!
+}
+
+void GDRenderer_Render(GDRenderer* this, GDObject* object, GDCamera* camera) {
+  if (camera->Flags & GDCAMERA_NEEDUPDATEMATRIX_FLAG) {
+    GDCamera_UpdateMatrix(camera);
+  }
+
+  if (object->Flags & GDOBJECT_NEEDUPDATEMATRIX_FLAG) {
+    if (strcmp(object->ID, "CameraWrapper1") == 0) {
+      printf("CameraWrapper1 found!\n");
+    }
+    GDObject_UpdateMatrix(object);
+  }
+
+  if (object->Type & GDOBJECT_TYPE_MESH) {
+    GDMesh* mesh = (GDMesh*)object;
+    if (GDMaterial_Has(mesh->Material, "projectionMatrix")) {
+      GDMaterial_SetMat4(mesh->Material, "projectionMatrix", camera->ProjectionMatrix.raw);
+    }
+    if (GDMaterial_Has(mesh->Material, "viewMatrix")) {
+      GDMaterial_SetMat4(mesh->Material, "viewMatrix", camera->Object.WorldMatrix.raw);
+    }
+    if (GDMaterial_Has(mesh->Material, "modelMatrix")) {
+      GDMaterial_SetMat4(mesh->Material, "modelMatrix", mesh->Object.WorldMatrix.raw);
+    }
+    if (GDMaterial_Has(mesh->Material, "time")) {
+      GDMaterial_SetFloat(mesh->Material, "time", this->Time);
+    }
+    if (GDMaterial_Has(mesh->Material, "color")) {
+      v4f color;
+      if (strcmp(object->ID, "AxisX") == 0) {
+        v4f_set(&color, 1.0f, 0.0f, 0.0f, 1.0f);
+      } else if (strcmp(object->ID, "AxisY") == 0) {
+        v4f_set(&color, 0.0f, 1.0f, 0.0f, 1.0f);
+      } else if (strcmp(object->ID, "AxisZ") == 0) {
+        v4f_set(&color, 0.0f, 0.0f, 1.0f, 1.0f);
+      } else {
+        v4f_set(&color, 0.6f, 0.6f, 0.6f, 0.0f);
+      }
+      GDMaterial_SetVec4(mesh->Material, "color", color.raw);
+    }
+    GDMaterial_Use(mesh->Material);
+    GDGeometry_Draw(mesh->Geometry);
+  }
+
+  for (size_t i = 0; i < object->ChildrenCount; i++) {
+    GDRenderer_Render(this, object->Children[i], camera);
+  }
 }
 
 #undef GDRENDERER_SOURCE

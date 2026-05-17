@@ -95,6 +95,7 @@ void GDMaterial_SetVec4(GDMaterial* this, const char* name, float value[4]);
 void GDMaterial_SetMat2(GDMaterial* this, const char* name, float value[4]);
 void GDMaterial_SetMat3(GDMaterial* this, const char* name, float value[9]);
 void GDMaterial_SetMat4(GDMaterial* this, const char* name, float value[16]);
+bool GDMaterial_Has(GDMaterial* this, const char* name);
 
 #endif
 /* =============================== */
@@ -318,6 +319,15 @@ void GDMaterial_SetMat4(GDMaterial* this, const char* name, float value[16]) {
       param->Mat4.Value[i] = value[i];
     }
   }
+}
+
+bool GDMaterial_Has(GDMaterial* this, const char* name) {
+  for (size_t i = 0; i < this->ParamsCount; i++) {
+    if (strcmp(this->Params[i].Name, name) == 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 #undef GDMATERIAL_SOURCE

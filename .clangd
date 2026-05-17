@@ -12,6 +12,8 @@ CompileFlags:
     - -Wall
     - -Wextra
     - -Wno-missing-braces
+    - -DGDRENDERER_SOURCE
+    - -DGDOBJECT_SOURCE
 ---
 If:
   PathMatch: (^|.*/)(tests|include)/.*\.(c|h)$

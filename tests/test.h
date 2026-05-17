@@ -3,7 +3,7 @@
 
 void testName(const char* name);
 void test(int condition, const char* message);
-int testStatus();
+int testStatus(void);
 
 #endif
 /* =============================== */
@@ -30,7 +30,7 @@ void test(int condition, const char* message) {
   }
 }
 
-int testStatus() {
+int testStatus(void) {
   return _testStatus;
 }
 
