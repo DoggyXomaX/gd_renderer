@@ -4,16 +4,15 @@ Diagnostics:
 CompileFlags:
   Add:
     - -xc
-    - -Iinclude
-    - -Ideps/gl3w/include
-    - -Ideps/SDL/include
-    - -Ideps/gd_math/include
     - -std=c11
     - -Wall
     - -Wextra
     - -Wno-missing-braces
-    - -DGDRENDERER_SOURCE
-    - -DGDOBJECT_SOURCE
+    - -Iinclude
+    - -Ideps/gl3w/include
+    - -Ideps/SDL/include
+    - -Ideps/gd_math/include
+    - -Ideps/stb_image/include
 ---
 If:
   PathMatch: (^|.*/)(tests|include)/.*\.(c|h)$
@@ -23,3 +22,4 @@ CompileFlags:
     - -I../deps/gl3w/include
     - -I../deps/SDL/include
     - -I../deps/gd_math/include
+    - -I../deps/stb_image/include

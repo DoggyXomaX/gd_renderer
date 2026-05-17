@@ -25,7 +25,6 @@ out vec4 FragColor;
 void main() {
   float x = fract(vWorldPosition.x);
   float z = fract(vWorldPosition.z);
-  float t = 0.0;
-  if (x < 0.01 || x > 0.99 || z < 0.01 || z > 0.99) t = 1.0;
-  FragColor = vec4(t);
+  if (x > 0.01 && z > 0.01) discard;
+  FragColor = vec4(1.0);
 }
