@@ -1,5 +1,17 @@
 #include "test.h"
 
+#define TEST_SOURCE
+#include "test.h"
+
+#define M4F_SOURCE
+#include "m4f.h"
+
+#define V3F_SOURCE
+#include "v3f.h"
+
+#define V4F_SOURCE
+#include "v4f.h"
+
 #define GDRENDERER_SOURCE
 #include "gd_renderer.h"
 
@@ -20,6 +32,9 @@
 
 #define GDGEOMETRY_SOURCE
 #include "gd_geometry.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 void OnUpdate(GDRenderer* renderer) {
   (void)renderer;
