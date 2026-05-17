@@ -3,15 +3,7 @@ tests:
 	clang \
 		-Iinclude -Ideps/gl3w/include -Ideps/SDL/include -Ideps/gd_math/include \
 		-std=c11 -Wall -Wextra -Wno-missing-braces -O3 \
-		-o bin/tests/index tests/index.c deps/gl3w/src/gl3w.c \
-		-lm -Ldeps/SDL/build -lSDL3
-
-tests-debug:
-	mkdir -p bin/tests
-	clang \
-		-Iinclude -Ideps/gl3w/include -Ideps/SDL/include -Ideps/gd_math/include \
-		-std=c11 -Wall -Wextra -Wno-missing-braces -g -O0 \
-		-o bin/tests/index tests/index.c deps/gl3w/src/gl3w.c \
+		-o bin/tests/index tests/index.c \
 		-lm -Ldeps/SDL/build -lSDL3
 
 test:
