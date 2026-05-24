@@ -4,6 +4,9 @@
 #include <stddef.h>
 #include <string.h>
 
+#define UUID4_TEMPLATE "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
+#define UUID4_LENGTH (sizeof(UUID4_TEMPLATE) - 1)
+
 void uuid4(char* out, size_t offset);
 
 #endif
@@ -13,17 +16,20 @@ void uuid4(char* out, size_t offset);
 #include <time.h>
 #include <stdlib.h>
 
-static const char template[] = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
-static size_t templateLength = strlen(template);
-static const char letters[] = "0123456789abcdef";
-static size_t lettersCount = strlen(letters);
+#define HEX_DIGITS "0123456789abcdef"
 
 void uuid4(char* out, size_t offset) {
   srand(time(NULL));
-  for (size_t i = 0; i < templateLength; i++) {
-    out[offset + i] = template[i] != '-' ? letters[rand() % lettersCount] : '-';
+
+  for (size_t i = 0; i < UUID4_LENGTH; i++) {
+    // clang-format off
+    switch (UUID4_TEMPLATE[i]) {
+      case 'x': out[offset + i] = HEX_DIGITS[rand() % 16]; break;
+      case 'y': out[offset + i] = HEX_DIGITS[rand() % 4 + 8]; break;
+      default : out[offset + i] = UUID4_TEMPLATE[i]; break;
+    }
+    // clang-format on
   }
-  out[offset + templateLength] = 0;
 }
 
 #undef UUID4_SOURCE
