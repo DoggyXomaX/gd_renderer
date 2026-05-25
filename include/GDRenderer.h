@@ -1,8 +1,6 @@
 #ifndef GDRENDERER_HEADER
 #define GDRENDERER_HEADER
 
-#include "GL/glcorearb.h"
-#include "SDL3/SDL_events.h"
 #include "GDGeometry.h"
 #include "GDMaterial.h"
 #include "GDMesh.h"
