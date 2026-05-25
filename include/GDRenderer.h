@@ -210,6 +210,9 @@ void GDRenderer_StartUpdate(GDRenderer* this, void (*onUpdate)(GDRenderer* this)
     return;
   }
 
+  uint8_t whitePixel[3] = { 255, 255, 255 };
+  GDTexture whiteTexture = GDTexture_Create("White", whitePixel, 1, 1, 3);
+
   char buffer[1024];
   GDTexture_ToString(&texture, buffer, 1024);
   printf("%s\n", buffer);
@@ -220,14 +223,23 @@ void GDRenderer_StartUpdate(GDRenderer* this, void (*onUpdate)(GDRenderer* this)
   GDMaterial_RegisterMat4(&basicMaterial, "modelMatrix");
   GDMaterial_RegisterVec4(&basicMaterial, "color");
   GDMaterial_RegisterFloat(&basicMaterial, "time");
-
   GDMaterial_RegisterTexture(&basicMaterial, "diffuse", 0);
-  GDMaterial_SetTexture(&basicMaterial, "diffuse", texture.Texture);
+
+  GDMaterial axesMaterial = GDMaterial_Create("Axes", &basicShader);
+  GDMaterial_RegisterMat4(&axesMaterial, "projectionMatrix");
+  GDMaterial_RegisterMat4(&axesMaterial, "viewMatrix");
+  GDMaterial_RegisterMat4(&axesMaterial, "modelMatrix");
+  GDMaterial_RegisterVec4(&axesMaterial, "color");
+  GDMaterial_RegisterFloat(&axesMaterial, "time");
+  GDMaterial_RegisterTexture(&axesMaterial, "diffuse", 0);
 
   GDMaterial gridMaterial = GDMaterial_Create("Grid", &gridShader);
   GDMaterial_RegisterMat4(&gridMaterial, "projectionMatrix");
   GDMaterial_RegisterMat4(&gridMaterial, "viewMatrix");
   GDMaterial_RegisterMat4(&gridMaterial, "modelMatrix");
+
+  GDMaterial_SetTexture(&basicMaterial, "diffuse", texture.Texture);
+  GDMaterial_SetTexture(&axesMaterial, "diffuse", whiteTexture.Texture);
 
   GDObject scene = GDObject_Create("Scene1", GDOBJECT_TYPE_EMPTY);
 
@@ -245,17 +257,17 @@ void GDRenderer_StartUpdate(GDRenderer* this, void (*onUpdate)(GDRenderer* this)
 
   float lineWidth = 0.01f;
 
-  GDMesh axisX = GDMesh_Create("AxisX", &cubeGeometry, &basicMaterial);
+  GDMesh axisX = GDMesh_Create("AxisX", &cubeGeometry, &axesMaterial);
   GDObject_AddChild(&scene, &axisX.Object);
   GDObject_SetPosition(&axisX.Object, 0.5f, 0.0f, 0.0f);
   GDObject_SetScale(&axisX.Object, 1.0f, lineWidth, lineWidth);
 
-  GDMesh axisY = GDMesh_Create("AxisY", &cubeGeometry, &basicMaterial);
+  GDMesh axisY = GDMesh_Create("AxisY", &cubeGeometry, &axesMaterial);
   GDObject_AddChild(&scene, &axisY.Object);
   GDObject_SetPosition(&axisY.Object, 0.0f, 0.5f, 0.0f);
   GDObject_SetScale(&axisY.Object, lineWidth, 1.0f, lineWidth);
 
-  GDMesh axisZ = GDMesh_Create("AxisZ", &cubeGeometry, &basicMaterial);
+  GDMesh axisZ = GDMesh_Create("AxisZ", &cubeGeometry, &axesMaterial);
   GDObject_AddChild(&scene, &axisZ.Object);
   GDObject_SetPosition(&axisZ.Object, 0.0f, 0.0f, 0.5f);
   GDObject_SetScale(&axisZ.Object, lineWidth, lineWidth, 1.0f);

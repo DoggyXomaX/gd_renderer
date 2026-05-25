@@ -22,7 +22,7 @@ typedef struct GDTexture_s {
   GLenum WrapT;
 } GDTexture;
 
-GDTexture GDTexture_Create(const char* name);
+GDTexture GDTexture_Create(const char* name, const uint8_t* pixels, int32_t width, int32_t height, int32_t channels);
 GDTexture GDTexture_Load(const char* name, const char* path);
 void GDTexture_ToString(GDTexture* this, char* output, size_t maxLength);
 
@@ -32,48 +32,19 @@ void GDTexture_ToString(GDTexture* this, char* output, size_t maxLength);
 
 static bool isStbInit = false;
 
-// Please don't use this method
-GDTexture GDTexture_Create(const char* name) {
+GDTexture GDTexture_Create(const char* name, const uint8_t* pixels, int32_t width, int32_t height, int32_t channels) {
   GDTexture texture = {
     .Flags = 0,
     .Name = name,
     .Texture = 0,
-    .Width = 0,
-    .Height = 0,
-    .Channels = 0,
-    .MinFilter = GL_LINEAR,
-    .MagFilter = GL_LINEAR,
-    .WrapS = GL_REPEAT,
-    .WrapT = GL_REPEAT
-  };
-
-  return texture;
-}
-
-GDTexture GDTexture_Load(const char* name, const char* path) {
-  GDTexture texture = {
-    .Flags = 0,
-    .Name = name,
-    .Width = 0,
-    .Height = 0,
-    .Channels = 0,
-    .Texture = 0,
+    .Width = width,
+    .Height = height,
+    .Channels = channels,
     .MinFilter = GL_LINEAR_MIPMAP_LINEAR,
     .MagFilter = GL_LINEAR,
     .WrapS = GL_REPEAT,
     .WrapT = GL_REPEAT
   };
-
-  if (!isStbInit) {
-    stbi_set_flip_vertically_on_load(true);
-    isStbInit = true;
-  }
-
-  unsigned char* pixels = stbi_load(path, &texture.Width, &texture.Height, &texture.Channels, 4);
-  if (!pixels) {
-    fprintf(stderr, "Failed to load \"%s\"\n", path);
-    return texture;
-  }
 
   glGenTextures(1, &texture.Texture);
   glBindTexture(GL_TEXTURE_2D, texture.Texture);
@@ -87,9 +58,31 @@ GDTexture GDTexture_Load(const char* name, const char* path) {
 
   glBindTexture(GL_TEXTURE_2D, 0);
 
-  stbi_image_free(pixels);
-
   texture.Flags |= GDTEXTURE_INIT_FLAG;
+
+  return texture;
+}
+
+GDTexture GDTexture_Load(const char* name, const char* path) {
+  GDTexture texture = { .Flags = 0 };
+
+  if (!isStbInit) {
+    stbi_set_flip_vertically_on_load(true);
+    isStbInit = true;
+  }
+
+  int32_t width = 0;
+  int32_t height = 0;
+  int32_t channels = 0;
+  unsigned char* pixels = stbi_load(path, &width, &height, &channels, 4);
+  if (!pixels) {
+    fprintf(stderr, "Failed to load \"%s\"\n", path);
+    return texture;
+  }
+
+  texture = GDTexture_Create(name, pixels, width, height, channels);
+
+  stbi_image_free(pixels);
 
   return texture;
 }

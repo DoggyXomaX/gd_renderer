@@ -25,6 +25,6 @@ uniform sampler2D diffuse;
 uniform vec4 color;
 
 void main() {
-  vec4 outColor = texture(diffuse, vUV) * color;
-  FragColor = outColor;
+  vec4 textureColor = texture(diffuse, vUV);
+  FragColor = textureColor * color;
 }
