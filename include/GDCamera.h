@@ -1,8 +1,8 @@
 #ifndef GDCAMERA_HEADER
 #define GDCAMERA_HEADER
 
-#include "gd_mesh.h"
-#include "gd_object.h"
+#include "GDMesh.h"
+#include "GDObject.h"
 
 #define GDCAMERA_NEEDUPDATEMATRIX_FLAG (uint32_t)(1 << 0)
 

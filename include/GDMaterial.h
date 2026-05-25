@@ -1,7 +1,7 @@
 #ifndef GDMATERIAL_HEADER
 #define GDMATERIAL_HEADER
 
-#include "gd_shader.h"
+#include "GDShader.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -27,7 +27,8 @@ typedef struct GDMaterialParam_s {
   union {
     struct {
       int32_t Value; // 4
-      char _[60];
+      int32_t Slot;  // 4
+      char _[56];
     } Texture;
     struct {
       int32_t Value; // 4
@@ -75,9 +76,9 @@ typedef struct GDMaterial_s {
 GDMaterial GDMaterial_Create(const char* name, GDShader* shader);
 void GDMaterial_Destroy(GDMaterial* this);
 void GDMaterial_Use(GDMaterial* this);
+GDMaterialParam* GDMaterial_GetParam(GDMaterial* this, uint32_t type, const char* name);
 
-// TODO: REAL TEXTURE FUCDK
-void GDMaterial_RegisterTexture(GDMaterial* this, const char* name);
+void GDMaterial_RegisterTexture(GDMaterial* this, const char* name, int32_t slot);
 void GDMaterial_RegisterInt32(GDMaterial* this, const char* name);
 void GDMaterial_RegisterFloat(GDMaterial* this, const char* name);
 void GDMaterial_RegisterVec2(GDMaterial* this, const char* name);
@@ -111,7 +112,7 @@ static inline void registerParam(GDMaterial* this, GDMaterialParam param) {
   this->ParamsCount++;
 }
 
-static inline GDMaterialParam* findParam(GDMaterial* this, uint32_t type, const char* name) {
+GDMaterialParam* GDMaterial_GetParam(GDMaterial* this, uint32_t type, const char* name) {
   for (size_t i = 0; i < this->ParamsCount; i++) {
     GDMaterialParam* param = &this->Params[i];
     if (strcmp(name, param->Name) == 0) {
@@ -150,7 +151,7 @@ void GDMaterial_Use(GDMaterial* this) {
     GDMaterialParam* param = &this->Params[i];
     switch (param->Type) {
       case GDPARAM_TEXTURE:
-        GDShader_SetTexture(shader, param->Name, param->Texture.Value);
+        GDShader_SetTexture(shader, param->Name, param->Texture.Value, param->Texture.Slot);
         break;
       case GDPARAM_INT32:
         GDShader_SetInt32(shader, param->Name, param->Int32.Value);
@@ -180,8 +181,9 @@ void GDMaterial_Use(GDMaterial* this) {
   }
 }
 
-void GDMaterial_RegisterTexture(GDMaterial* this, const char* name) {
+void GDMaterial_RegisterTexture(GDMaterial* this, const char* name, int32_t slot) {
   GDMaterialParam param = { .Name = name, .Type = GDPARAM_TEXTURE };
+  param.Texture.Slot = slot;
   param.Texture.Value = 0;
   registerParam(this, param);
 }
@@ -247,28 +249,28 @@ void GDMaterial_RegisterMat4(GDMaterial* this, const char* name) {
 }
 
 void GDMaterial_SetTexture(GDMaterial* this, const char* name, int32_t value) {
-  GDMaterialParam* param = findParam(this, GDPARAM_TEXTURE, name);
+  GDMaterialParam* param = GDMaterial_GetParam(this, GDPARAM_TEXTURE, name);
   if (param) {
     param->Texture.Value = value;
   }
 }
 
 void GDMaterial_SetInt32(GDMaterial* this, const char* name, int32_t value) {
-  GDMaterialParam* param = findParam(this, GDPARAM_INT32, name);
+  GDMaterialParam* param = GDMaterial_GetParam(this, GDPARAM_INT32, name);
   if (param) {
     param->Int32.Value = value;
   }
 }
 
 void GDMaterial_SetFloat(GDMaterial* this, const char* name, float value) {
-  GDMaterialParam* param = findParam(this, GDPARAM_FLOAT, name);
+  GDMaterialParam* param = GDMaterial_GetParam(this, GDPARAM_FLOAT, name);
   if (param) {
     param->Float.Value = value;
   }
 }
 
 void GDMaterial_SetVec2(GDMaterial* this, const char* name, float value[2]) {
-  GDMaterialParam* param = findParam(this, GDPARAM_VEC2, name);
+  GDMaterialParam* param = GDMaterial_GetParam(this, GDPARAM_VEC2, name);
   if (param) {
     for (int i = 0; i < 2; i++) {
       param->Vec2.Value[i] = value[i];
@@ -277,7 +279,7 @@ void GDMaterial_SetVec2(GDMaterial* this, const char* name, float value[2]) {
 }
 
 void GDMaterial_SetVec3(GDMaterial* this, const char* name, float value[3]) {
-  GDMaterialParam* param = findParam(this, GDPARAM_VEC3, name);
+  GDMaterialParam* param = GDMaterial_GetParam(this, GDPARAM_VEC3, name);
   if (param) {
     for (int i = 0; i < 3; i++) {
       param->Vec3.Value[i] = value[i];
@@ -286,7 +288,7 @@ void GDMaterial_SetVec3(GDMaterial* this, const char* name, float value[3]) {
 }
 
 void GDMaterial_SetVec4(GDMaterial* this, const char* name, float value[4]) {
-  GDMaterialParam* param = findParam(this, GDPARAM_VEC4, name);
+  GDMaterialParam* param = GDMaterial_GetParam(this, GDPARAM_VEC4, name);
   if (param) {
     for (int i = 0; i < 4; i++) {
       param->Vec4.Value[i] = value[i];
@@ -295,7 +297,7 @@ void GDMaterial_SetVec4(GDMaterial* this, const char* name, float value[4]) {
 }
 
 void GDMaterial_SetMat2(GDMaterial* this, const char* name, float value[4]) {
-  GDMaterialParam* param = findParam(this, GDPARAM_MAT2, name);
+  GDMaterialParam* param = GDMaterial_GetParam(this, GDPARAM_MAT2, name);
   if (param) {
     for (int i = 0; i < 4; i++) {
       param->Mat2.Value[i] = value[i];
@@ -304,7 +306,7 @@ void GDMaterial_SetMat2(GDMaterial* this, const char* name, float value[4]) {
 }
 
 void GDMaterial_SetMat3(GDMaterial* this, const char* name, float value[9]) {
-  GDMaterialParam* param = findParam(this, GDPARAM_MAT3, name);
+  GDMaterialParam* param = GDMaterial_GetParam(this, GDPARAM_MAT3, name);
   if (param) {
     for (int i = 0; i < 9; i++) {
       param->Mat3.Value[i] = value[i];
@@ -313,7 +315,7 @@ void GDMaterial_SetMat3(GDMaterial* this, const char* name, float value[9]) {
 }
 
 void GDMaterial_SetMat4(GDMaterial* this, const char* name, float value[16]) {
-  GDMaterialParam* param = findParam(this, GDPARAM_MAT4, name);
+  GDMaterialParam* param = GDMaterial_GetParam(this, GDPARAM_MAT4, name);
   if (param) {
     for (int i = 0; i < 16; i++) {
       param->Mat4.Value[i] = value[i];

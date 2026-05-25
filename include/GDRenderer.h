@@ -1,25 +1,27 @@
 #ifndef GDRENDERER_HEADER
 #define GDRENDERER_HEADER
 
+#include "GL/glcorearb.h"
 #include "SDL3/SDL_events.h"
-#include "gd_geometry.h"
-#include "gd_material.h"
-#include "gd_mesh.h"
-#include "gd_shader.h"
-#include "gd_camera.h"
+#include "GDGeometry.h"
+#include "GDMaterial.h"
+#include "GDMesh.h"
+#include "GDShader.h"
+#include "GDTexture.h"
+#include "GDCamera.h"
 
 #include <GL/gl3w.h>
 #include <SDL3/SDL.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #define GDR_INIT_FLAG (1 << 0)
 #define GDR_RUNNING_FLAG (1 << 1)
 #define GDR_API_INIT_FLAG (1 << 2)
 
-#define M_PI 3.1415920
-static const float DEG2RAD = (float)M_PI / 180.0f;
+#define __USE_MISC
+#include <math.h>
+#define DEG2RAD (M_PI / 180.0)
 
 typedef struct GDRendererOpenGLImpl_s {
   SDL_Window* Window;
@@ -205,12 +207,24 @@ void GDRenderer_StartUpdate(GDRenderer* this, void (*onUpdate)(GDRenderer* this)
     return;
   }
 
+  GDTexture texture = GDTexture_Load("Default256", "textures/default256.png");
+  if (!(texture.Flags & GDTEXTURE_INIT_FLAG)) {
+    return;
+  }
+
+  char buffer[1024];
+  GDTexture_ToString(&texture, buffer, 1024);
+  printf("%s\n", buffer);
+
   GDMaterial basicMaterial = GDMaterial_Create("Basic", &basicShader);
   GDMaterial_RegisterMat4(&basicMaterial, "projectionMatrix");
   GDMaterial_RegisterMat4(&basicMaterial, "viewMatrix");
   GDMaterial_RegisterMat4(&basicMaterial, "modelMatrix");
   GDMaterial_RegisterVec4(&basicMaterial, "color");
   GDMaterial_RegisterFloat(&basicMaterial, "time");
+
+  GDMaterial_RegisterTexture(&basicMaterial, "diffuse", 0);
+  GDMaterial_SetTexture(&basicMaterial, "diffuse", texture.Texture);
 
   GDMaterial gridMaterial = GDMaterial_Create("Grid", &gridShader);
   GDMaterial_RegisterMat4(&gridMaterial, "projectionMatrix");

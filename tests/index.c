@@ -1,7 +1,8 @@
 #include "../deps/gl3w/src/gl3w.c"
 
-#include "test_gd_renderer.c"
-#include "test_uuid4.c"
+#include "uuid4.test.c"
+#include "GDTexture.test.c"
+#include "GDRenderer.test.c"
 
 #define TEST_SOURCE
 #include "test.h"
@@ -16,25 +17,31 @@
 #include "v4f.h"
 
 #define GDRENDERER_SOURCE
-#include "gd_renderer.h"
+#include "GDRenderer.h"
 
 #define GDMATERIAL_SOURCE
-#include "gd_material.h"
+#include "GDMaterial.h"
 
 #define GDOBJECT_SOURCE
-#include "gd_object.h"
+#include "GDObject.h"
 
 #define GDMESH_SOURCE
-#include "gd_mesh.h"
+#include "GDMesh.h"
 
 #define GDCAMERA_SOURCE
-#include "gd_camera.h"
+#include "GDCamera.h"
 
 #define GDSHADER_SOURCE
-#include "gd_shader.h"
+#include "GDShader.h"
 
 #define GDGEOMETRY_SOURCE
-#include "gd_geometry.h"
+#include "GDGeometry.h"
+
+#define GDTEXTURE_SOURCE
+#include "GDTexture.h"
+
+#define GLHELPER_SOURCE
+#include "GLHelper.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -43,8 +50,9 @@
 #include "uuid4.h"
 
 int main() {
-  test_uuid4();
-  // test_gd_renderer();
+  uuid4_test();
+  // GDTexture_test();
+  GDRenderer_test();
 
   return testStatus();
 }

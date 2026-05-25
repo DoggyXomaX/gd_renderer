@@ -1,5 +1,6 @@
 #include "test.h"
 #include "uuid4.h"
+
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -17,7 +18,7 @@ bool isY(char c) {
   return c == '8' || c == '9' || c == 'a' || c == 'b' || c == 'A' || c == 'B';
 }
 
-void test_uuid4() {
+void uuid4_test() {
   testName("uuid4");
 
   bool isOk = true;

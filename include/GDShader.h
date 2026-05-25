@@ -23,7 +23,7 @@ typedef struct GDShader_s {
 GDShader GDShader_Load(const char* name, const char* path);
 void GDShader_Destroy(GDShader* this);
 void GDShader_Use(GDShader* this);
-void GDShader_SetTexture(GDShader* this, const char* name, int32_t value);
+void GDShader_SetTexture(GDShader* this, const char* name, int32_t value, int32_t slot);
 void GDShader_SetInt32(GDShader* this, const char* name, int32_t value);
 void GDShader_SetFloat(GDShader* this, const char* name, float value);
 void GDShader_SetVec2(GDShader* this, const char* name, float value[2]);
@@ -192,10 +192,12 @@ void GDShader_Use(GDShader* this) {
   glUseProgram(this->Program);
 }
 
-void GDShader_SetTexture(GDShader* this, const char* name, int32_t value) {
+void GDShader_SetTexture(GDShader* this, const char* name, int32_t value, int32_t slot) {
   GLint location = getUniformLocation(this, name);
   if (location >= 0) {
-    glUniform1i(location, value);
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, value);
+    glUniform1i(location, slot);
   }
 }
 

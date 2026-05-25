@@ -8,21 +8,23 @@ uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
-out vec3 vColor;
+out vec2 vUV;
 
 void main() {
-  vColor = vec3(aUV, 1.0);
+  vUV = aUV;
   gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(aPosition, 1.0);
 }
 // ===============================================
 #pragma fragment
 #version 330 core
-in vec3 vColor;
+
+in vec2 vUV;
 out vec4 FragColor;
 
+uniform sampler2D diffuse;
 uniform vec4 color;
 
 void main() {
-  vec4 outColor = vec4(color.rgb, 1.0);
-  FragColor = mix(vec4(vColor, 1.0), outColor, color.a);
+  vec4 outColor = texture(diffuse, vUV) * color;
+  FragColor = outColor;
 }

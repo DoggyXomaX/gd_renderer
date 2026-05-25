@@ -1,9 +1,9 @@
 #ifndef GDMESH_HEADER
 #define GDMESH_HEADER
 
-#include "gd_object.h"
-#include "gd_material.h"
-#include "gd_geometry.h"
+#include "GDObject.h"
+#include "GDMaterial.h"
+#include "GDGeometry.h"
 
 typedef struct GDMesh_s {
   GDObject Object;
