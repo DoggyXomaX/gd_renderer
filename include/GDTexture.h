@@ -1,7 +1,6 @@
 #ifndef GDTEXTURE_HEADER
 #define GDTEXTURE_HEADER
 
-#include "GL/glcorearb.h"
 #include "GLHelper.h"
 #include <GL/gl3w.h>
 #include <stb_image.h>
@@ -23,6 +22,7 @@ typedef struct GDTexture_s {
 } GDTexture;
 
 GDTexture GDTexture_Create(const char* name, const uint8_t* pixels, int32_t width, int32_t height, int32_t channels);
+void GDTexture_Destroy(GDTexture* this);
 GDTexture GDTexture_Load(const char* name, const char* path);
 void GDTexture_ToString(GDTexture* this, char* output, size_t maxLength);
 
@@ -61,6 +61,12 @@ GDTexture GDTexture_Create(const char* name, const uint8_t* pixels, int32_t widt
   texture.Flags |= GDTEXTURE_INIT_FLAG;
 
   return texture;
+}
+
+void GDTexture_Destroy(GDTexture* this) {
+  if (this->Texture) {
+    glDeleteTextures(1, &this->Texture);
+  }
 }
 
 GDTexture GDTexture_Load(const char* name, const char* path) {

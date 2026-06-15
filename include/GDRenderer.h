@@ -4,6 +4,7 @@
 #include "GDGeometry.h"
 #include "GDMaterial.h"
 #include "GDMesh.h"
+#include "GDObjLoader.h"
 #include "GDShader.h"
 #include "GDTexture.h"
 #include "GDCamera.h"
@@ -54,58 +55,6 @@ void GDRenderer_Render(GDRenderer* this, GDObject* object, GDCamera* camera);
 #include "m4f.h"
 
 static bool isGL3WInit = false;
-
-// <TEST>
-// clang-format off
-static GDVertex testVertices[] = {
-  // Front, normal +Z
-  -0.5f, -0.5f,  0.5f,   0.0f,  0.0f,  1.0f,   0.0f, 0.0f,
-   0.5f, -0.5f,  0.5f,   0.0f,  0.0f,  1.0f,   1.0f, 0.0f,
-   0.5f,  0.5f,  0.5f,   0.0f,  0.0f,  1.0f,   1.0f, 1.0f,
-  -0.5f,  0.5f,  0.5f,   0.0f,  0.0f,  1.0f,   0.0f, 1.0f,
-
-  // Back, normal -Z
-   0.5f, -0.5f, -0.5f,   0.0f,  0.0f, -1.0f,   0.0f, 0.0f,
-  -0.5f, -0.5f, -0.5f,   0.0f,  0.0f, -1.0f,   1.0f, 0.0f,
-  -0.5f,  0.5f, -0.5f,   0.0f,  0.0f, -1.0f,   1.0f, 1.0f,
-   0.5f,  0.5f, -0.5f,   0.0f,  0.0f, -1.0f,   0.0f, 1.0f,
-
-  // Left, normal -X
-  -0.5f, -0.5f, -0.5f,  -1.0f,  0.0f,  0.0f,   0.0f, 0.0f,
-  -0.5f, -0.5f,  0.5f,  -1.0f,  0.0f,  0.0f,   1.0f, 0.0f,
-  -0.5f,  0.5f,  0.5f,  -1.0f,  0.0f,  0.0f,   1.0f, 1.0f,
-  -0.5f,  0.5f, -0.5f,  -1.0f,  0.0f,  0.0f,   0.0f, 1.0f,
-
-  // Right, normal +X
-   0.5f, -0.5f,  0.5f,   1.0f,  0.0f,  0.0f,   0.0f, 0.0f,
-   0.5f, -0.5f, -0.5f,   1.0f,  0.0f,  0.0f,   1.0f, 0.0f,
-   0.5f,  0.5f, -0.5f,   1.0f,  0.0f,  0.0f,   1.0f, 1.0f,
-   0.5f,  0.5f,  0.5f,   1.0f,  0.0f,  0.0f,   0.0f, 1.0f,
-
-  // Top, normal +Y
-  -0.5f,  0.5f,  0.5f,   0.0f,  1.0f,  0.0f,   0.0f, 0.0f,
-   0.5f,  0.5f,  0.5f,   0.0f,  1.0f,  0.0f,   1.0f, 0.0f,
-   0.5f,  0.5f, -0.5f,   0.0f,  1.0f,  0.0f,   1.0f, 1.0f,
-  -0.5f,  0.5f, -0.5f,   0.0f,  1.0f,  0.0f,   0.0f, 1.0f,
-
-  // Bottom, normal -Y
-  -0.5f, -0.5f, -0.5f,   0.0f, -1.0f,  0.0f,   0.0f, 0.0f,
-   0.5f, -0.5f, -0.5f,   0.0f, -1.0f,  0.0f,   1.0f, 0.0f,
-   0.5f, -0.5f,  0.5f,   0.0f, -1.0f,  0.0f,   1.0f, 1.0f,
-  -0.5f, -0.5f,  0.5f,   0.0f, -1.0f,  0.0f,   0.0f, 1.0f,
-};
-
-static uint32_t testIndices[] = {
-   0,  1,  2,   2,  3,  0,
-   4,  5,  6,   6,  7,  4,
-   8,  9, 10,  10, 11,  8,
-  12, 13, 14,  14, 15, 12,
-  16, 17, 18,  18, 19, 16,
-  20, 21, 22,  22, 23, 20,
-};
-// clang-format on
-
-float testAngle = 0.0f;
 
 GDRenderer GDRenderer_New(const char* title, uint32_t width, uint32_t height) {
   GDRenderer renderer = {
@@ -193,120 +142,6 @@ void GDRenderer_StartUpdate(GDRenderer* this, void (*onUpdate)(GDRenderer* this)
     return;
   }
 
-  // !!!!NEED REMOVE!!!!!
-  GDGeometry cubeGeometry = GDGeometry_Create(
-    "Box",
-    testVertices, sizeof(testVertices) / sizeof(GDVertex),
-    testIndices, sizeof(testIndices) / sizeof(uint32_t));
-
-  GDShader basicShader = GDShader_Load("Basic", "shaders/Basic.shader");
-  GDShader gridShader = GDShader_Load("Grid", "shaders/Grid.shader");
-  if (!(basicShader.Flags & GDSHADER_INIT_FLAG) || !(gridShader.Flags & GDSHADER_INIT_FLAG)) {
-    return;
-  }
-
-  GDTexture texture = GDTexture_Load("Default256", "textures/default256.png");
-  if (!(texture.Flags & GDTEXTURE_INIT_FLAG)) {
-    return;
-  }
-
-  uint8_t whitePixel[3] = { 255, 255, 255 };
-  GDTexture whiteTexture = GDTexture_Create("White", whitePixel, 1, 1, 3);
-
-  char buffer[1024];
-  GDTexture_ToString(&texture, buffer, 1024);
-  printf("%s\n", buffer);
-
-  GDMaterial basicMaterial = GDMaterial_Create("Basic", &basicShader);
-  GDMaterial_RegisterMat4(&basicMaterial, "projectionMatrix");
-  GDMaterial_RegisterMat4(&basicMaterial, "viewMatrix");
-  GDMaterial_RegisterMat4(&basicMaterial, "modelMatrix");
-  GDMaterial_RegisterVec4(&basicMaterial, "color");
-  GDMaterial_RegisterFloat(&basicMaterial, "time");
-  GDMaterial_RegisterTexture(&basicMaterial, "diffuse", 0);
-
-  GDMaterial axesMaterial = GDMaterial_Create("Axes", &basicShader);
-  GDMaterial_RegisterMat4(&axesMaterial, "projectionMatrix");
-  GDMaterial_RegisterMat4(&axesMaterial, "viewMatrix");
-  GDMaterial_RegisterMat4(&axesMaterial, "modelMatrix");
-  GDMaterial_RegisterVec4(&axesMaterial, "color");
-  GDMaterial_RegisterFloat(&axesMaterial, "time");
-  GDMaterial_RegisterTexture(&axesMaterial, "diffuse", 0);
-
-  GDMaterial gridMaterial = GDMaterial_Create("Grid", &gridShader);
-  GDMaterial_RegisterMat4(&gridMaterial, "projectionMatrix");
-  GDMaterial_RegisterMat4(&gridMaterial, "viewMatrix");
-  GDMaterial_RegisterMat4(&gridMaterial, "modelMatrix");
-
-  GDMaterial_SetTexture(&basicMaterial, "diffuse", texture.Texture);
-  GDMaterial_SetTexture(&axesMaterial, "diffuse", whiteTexture.Texture);
-
-  GDObject scene = GDObject_Create("Scene1", GDOBJECT_TYPE_EMPTY);
-
-  GDMesh grid = GDMesh_Create("Grid", &cubeGeometry, &gridMaterial);
-  GDObject_AddChild(&scene, &grid.Object);
-  GDObject_SetPosition(&grid.Object, 0.0f, -0.01f, 0.0f);
-  GDObject_SetScale(&grid.Object, 10.0f, 0.01f, 10.0f);
-
-  GDObject cameraWrapper = GDObject_Create("CameraWrapper1", GDOBJECT_TYPE_EMPTY);
-  GDObject_AddChild(&scene, &cameraWrapper);
-
-  GDCamera camera = GDCamera_Create("Camera1", 70.0f, 1.0f, 0.1f, 100.0f);
-  GDObject_SetPosition(&camera.Object, 0.0f, 0.0f, -3.0f);
-  GDObject_AddChild(&cameraWrapper, &camera.Object);
-
-  float lineWidth = 0.01f;
-
-  GDMesh axisX = GDMesh_Create("AxisX", &cubeGeometry, &axesMaterial);
-  GDObject_AddChild(&scene, &axisX.Object);
-  GDObject_SetPosition(&axisX.Object, 0.5f, 0.0f, 0.0f);
-  GDObject_SetScale(&axisX.Object, 1.0f, lineWidth, lineWidth);
-
-  GDMesh axisY = GDMesh_Create("AxisY", &cubeGeometry, &axesMaterial);
-  GDObject_AddChild(&scene, &axisY.Object);
-  GDObject_SetPosition(&axisY.Object, 0.0f, 0.5f, 0.0f);
-  GDObject_SetScale(&axisY.Object, lineWidth, 1.0f, lineWidth);
-
-  GDMesh axisZ = GDMesh_Create("AxisZ", &cubeGeometry, &axesMaterial);
-  GDObject_AddChild(&scene, &axisZ.Object);
-  GDObject_SetPosition(&axisZ.Object, 0.0f, 0.0f, 0.5f);
-  GDObject_SetScale(&axisZ.Object, lineWidth, lineWidth, 1.0f);
-
-  GDMesh mesh1 = GDMesh_Create("Mesh1", &cubeGeometry, &basicMaterial);
-  GDObject_AddChild(&scene, &mesh1.Object);
-  GDObject_SetPosition(&mesh1.Object, 0.5f, 0.5f, 0.5f);
-  GDObject_SetScale(&mesh1.Object, 0.5f, 0.5f, 0.5f);
-
-  GDMesh mesh2 = GDMesh_Create("Mesh2", &cubeGeometry, &basicMaterial);
-  GDObject_SetPosition(&mesh2.Object, 0.0f, 0.75f, 0.0f);
-  GDObject_SetScale(&mesh2.Object, 0.5f, 0.5f, 0.5f);
-  GDObject_AddChild(&mesh1.Object, &mesh2.Object);
-
-  GDMesh mesh3 = GDMesh_Create("Mesh3", &cubeGeometry, &basicMaterial);
-  GDObject_SetPosition(&mesh3.Object, 0.0f, 0.0f, 0.0f);
-  GDObject_SetScale(&mesh3.Object, 1.0f, 0.99f, 1.0f);
-  GDObject_SetEuler(&mesh3.Object, 0.0f, 45.0f * DEG2RAD, 0.0f);
-  GDObject_AddChild(&mesh2.Object, &mesh3.Object);
-
-  GDMesh bullet = GDMesh_Create("Bullet", &cubeGeometry, &basicMaterial);
-  GDObject_SetPosition(&bullet.Object, 0.0f, 2.0f, 0.0f);
-  GDObject_SetScale(&bullet.Object, 0.05f, 0.1f, 0.05f);
-  GDObject_AddChild(&mesh1.Object, &bullet.Object);
-
-  GDMesh guns[6];
-  float deltaAngle = (M_PI * 2.0f) / 6.0f;
-  float x = 0.0f;
-  float y = 0.0f;
-  for (int i = 0; i < 6; i++) {
-    x = cosf(deltaAngle * (float)i);
-    y = sinf(deltaAngle * (float)i);
-    guns[i] = GDMesh_Create("G0", &cubeGeometry, &basicMaterial);
-    GDObject_SetPosition(&guns[i].Object, x * 0.3f, 0.75f, y * 0.3f);
-    GDObject_SetScale(&guns[i].Object, 0.1f, 0.5f, 0.1f);
-    GDObject_AddChild(&mesh2.Object, &guns[i].Object);
-  }
-  // /!!!!NEED REMOVE!!!!!
-
   glEnable(GL_DEPTH_TEST);
 
   this->Flags |= GDR_RUNNING_FLAG;
@@ -334,6 +169,7 @@ void GDRenderer_StartUpdate(GDRenderer* this, void (*onUpdate)(GDRenderer* this)
           break;
         }
         case SDL_EVENT_KEY_DOWN: {
+          // TODO: event handling
         }
       }
     }
@@ -343,43 +179,13 @@ void GDRenderer_StartUpdate(GDRenderer* this, void (*onUpdate)(GDRenderer* this)
 
     int pixelWidth, pixelHeight;
     SDL_GetWindowSizeInPixels(this->Impl.Window, &pixelWidth, &pixelHeight);
-    float aspect = (float)pixelWidth / (float)pixelHeight;
     glViewport(0, 0, pixelWidth, pixelHeight);
 
     if (onUpdate != NULL) {
       onUpdate(this);
     }
 
-    // !!!!!!!!!!NEEED REMOVE !!!!!!
-    {
-      GDObject_SetEuler(&cameraWrapper, 45.0f * DEG2RAD, testAngle, 0.0f * DEG2RAD);
-      GDObject_SetEuler(&mesh1.Object, testAngle * 0.1f, 0.0f, 0.0f);
-      GDObject_SetEuler(&mesh2.Object, 0.0f, testAngle * 2.0f, 0.0f);
-      GDObject_SetPosition(&bullet.Object, 0.0f, fmod(this->Time * 4.0f, 0.5f) * 20.0f, 0.0f);
-      testAngle += this->DeltaTime;
-
-      if (camera.Aspect != aspect) {
-        camera.Aspect = aspect;
-        camera.Flags |= GDCAMERA_NEEDUPDATEMATRIX_FLAG;
-      }
-      GDRenderer_Render(this, &scene, &camera);
-    }
     SDL_GL_SwapWindow(this->Impl.Window);
-  }
-
-  // !!!!!!!!!!NEEED REMOVE !!!!!!
-  {
-    GDGeometry_Destroy(&cubeGeometry);
-    GDShader_Destroy(&basicShader);
-    GDShader_Destroy(&gridShader);
-    GDMaterial_Destroy(&basicMaterial);
-    GDMaterial_Destroy(&gridMaterial);
-    GDObject_Destroy(&scene);
-    GDCamera_Destroy(&camera);
-    GDMesh_Destroy(&axisX);
-    GDMesh_Destroy(&axisY);
-    GDMesh_Destroy(&axisZ);
-    GDMesh_Destroy(&mesh1);
   }
 }
 

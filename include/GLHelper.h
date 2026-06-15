@@ -1,7 +1,6 @@
 #ifndef GLHELPER_HEADER
 #define GLHELPER_HEADER
 
-#include "GL/glcorearb.h"
 #include <GL/gl3w.h>
 
 const char* GLTextureFilter_ToString(GLenum value);

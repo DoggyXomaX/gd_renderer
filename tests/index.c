@@ -40,6 +40,9 @@
 #define GDTEXTURE_SOURCE
 #include "GDTexture.h"
 
+#define GDOBJLOADER_SOURCE
+#include "GDObjLoader.h"
+
 #define GLHELPER_SOURCE
 #include "GLHelper.h"
 
